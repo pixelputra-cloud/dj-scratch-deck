@@ -41,9 +41,6 @@ import {
 
 const PALM_CODE = FOUR_FINGERS
 const TWO_CODE = FINGER.INDEX | FINGER.MIDDLE
-/** camera frame maps to a square this many platter-radii wide (>1 so the
- *  frame edges reach a little past the rim). */
-const CAM_SPAN = 1.15
 
 export type Handedness = 'Left' | 'Right'
 
@@ -61,6 +58,11 @@ export interface PlatterGeom {
 
 export interface GestureContext {
   platter: PlatterGeom
+  /** maps a mirrored, normalised camera point (0..1) to viewport px, matching
+   *  exactly how the full-page camera feed is laid out on screen. The fingertip
+   *  is then measured against the on-screen platter directly — what you see the
+   *  hand over is what it scratches. */
+  mapPoint: (n: Point) => Point
   pitchPercent: number
   pitchRange: number
 }
@@ -169,11 +171,6 @@ export class GestureMachine {
     }
 
     const { cx, cy, radius } = ctx.platter
-    const span = radius * 2 * CAM_SPAN
-    const toPlatter = (n: Point): Point => ({
-      x: cx + (n.x - 0.5) * span,
-      y: cy + (n.y - 0.5) * span,
-    })
 
     // precompute per sample
     const feats = samples.map((s) => {
@@ -187,7 +184,7 @@ export class GestureMachine {
         hs,
         centroid,
         indexTipN: indexTip,
-        indexTipPx: toPlatter(indexTip),
+        indexTipPx: ctx.mapPoint(indexTip),
         pinchDist: pinchDistance(s.landmarks),
       }
     })

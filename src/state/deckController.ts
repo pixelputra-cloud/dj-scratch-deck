@@ -118,12 +118,20 @@ export function endScratch(): void {
 
 const machine = new GestureMachine()
 
-/** Feed one frame of raw (un-mirrored) MediaPipe hands. Mirrors x to match the
- *  selfie preview, runs the state machine, applies its output to the deck, and
- *  returns the result so the camera overlay can draw from the same data. */
+/**
+ * Feed one frame of raw (un-mirrored) MediaPipe hands. Mirrors x to match the
+ * selfie preview, runs the state machine, applies its output to the deck, and
+ * returns the result so the camera overlay can draw from the same data.
+ *
+ * `mapPoint` projects a mirrored, normalised camera point to viewport px the
+ * same way the full-page camera feed is laid out — so the fingertip is judged
+ * against the on-screen platter directly. Falls back to a platter-centred
+ * square if not supplied.
+ */
 export function processGestureResult(
   rawHands: RawHand[],
   timestampMs: number,
+  mapPoint?: (n: { x: number; y: number }) => { x: number; y: number },
 ): GestureResult {
   const samples: HandSample[] = rawHands.map((h) => ({
     handedness: h.handedness,
@@ -133,8 +141,17 @@ export function processGestureResult(
   const { pitchPercent, pitchRange, setPitchPercent, toggleMotor, toggleRpm } =
     useDeckStore.getState()
 
+  const fallbackSpan = geometry.radius * 2 * 1.15
+  const project =
+    mapPoint ??
+    ((n: { x: number; y: number }) => ({
+      x: geometry.cx + (n.x - 0.5) * fallbackSpan,
+      y: geometry.cy + (n.y - 0.5) * fallbackSpan,
+    }))
+
   const out = machine.update(samples, timestampMs, {
     platter: { cx: geometry.cx, cy: geometry.cy, radius: geometry.radius },
+    mapPoint: project,
     pitchPercent,
     pitchRange,
   })

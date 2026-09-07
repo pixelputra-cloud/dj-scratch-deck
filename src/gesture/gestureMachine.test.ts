@@ -8,8 +8,21 @@ import {
 import type { Point } from './poseCodes'
 
 const GEOM = { cx: 500, cy: 500, radius: 200 }
-const SPAN = GEOM.radius * 2 * 1.15 // 460 — camera frame -> platter px
-const CTX: GestureContext = { platter: GEOM, pitchPercent: 0, pitchRange: 8 }
+const SPAN = GEOM.radius * 2 * 1.15 // 460 — a stand-in camera-frame -> px scale
+
+/** stand-in for the real on-screen projector: centres the camera frame on the
+ *  platter and spans SPAN px across it. */
+const mapPoint = (n: Point): Point => ({
+  x: GEOM.cx + (n.x - 0.5) * SPAN,
+  y: GEOM.cy + (n.y - 0.5) * SPAN,
+})
+
+const CTX: GestureContext = {
+  platter: GEOM,
+  mapPoint,
+  pitchPercent: 0,
+  pitchRange: 8,
+}
 
 /** normalised point that maps `pxRight`,`pxDown` from the platter centre */
 function nAt(pxRight: number, pxDown = 0): Point {

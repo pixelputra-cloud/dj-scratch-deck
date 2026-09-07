@@ -6,28 +6,69 @@
 /* ===================== app shell ===================== */
 
 .tt-app {
+  position: relative;
   height: 100%;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  background:
-    radial-gradient(
-      120% 90% at 22% 0%,
-      var(--key-light),
-      transparent 60%
-    ),
-    var(--stage-bg);
   overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 22% 0%, var(--key-light), transparent 60%),
+    var(--stage-bg);
 }
 
+/* full-page camera backdrop --------------------------------------------- */
+.tt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+.tt-backdrop__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* selfie mirror */
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.tt-backdrop[data-live='true'] .tt-backdrop__video {
+  opacity: 1;
+}
+.tt-backdrop__scrim {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background:
+    radial-gradient(90% 70% at 50% 45%, transparent 30%, rgba(6, 6, 9, 0.72) 100%),
+    linear-gradient(180deg, rgba(6, 6, 9, 0.5), rgba(6, 6, 9, 0.35));
+}
+.tt-backdrop[data-live='true'] .tt-backdrop__scrim {
+  opacity: 1;
+}
+.tt-backdrop__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* header floats over the top edge ------------------------------------- */
 .tt-app__header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--plinth-edge);
   font-size: 12px;
   letter-spacing: 0.14em;
   color: var(--text-secondary);
+  background: linear-gradient(180deg, rgba(8, 8, 11, 0.78), transparent);
+  backdrop-filter: blur(4px);
 }
 .tt-app__brand {
   display: flex;
@@ -51,7 +92,7 @@
 .tt-app__status {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 .tt-app__status [data-live='true'] {
   color: var(--backlight);
@@ -64,39 +105,34 @@
   letter-spacing: 0.08em;
 }
 
-.tt-app__main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 18px;
-  padding: 18px 20px;
-  min-height: 0;
-}
-.tt-app__deckcol {
+/* centred deck stage ------------------------------------------------- */
+.tt-app__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   display: grid;
   place-items: center;
-  min-width: 0;
-}
-.tt-app__side {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 14px;
-  min-height: 0;
+  padding: 24px;
 }
 
 /* ===================== plinth ===================== */
 
 .tt-deck {
-  width: min(760px, 100%);
+  width: min(760px, 92vw);
 }
 .tt-plinth {
   position: relative;
   aspect-ratio: 4 / 2.9;
   border-radius: var(--radius-plinth);
-  background: var(--plinth-base);
+  /* translucent chassis — the camera feed reads through it */
+  background: var(--plinth-fill);
+  backdrop-filter: blur(var(--plinth-blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--plinth-blur)) saturate(1.15);
   box-shadow:
-    0 30px 60px -20px var(--plinth-shadow),
+    0 40px 90px -30px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
     0 2px 0 0 var(--plinth-bevel-hi) inset,
-    0 -18px 40px -20px #000 inset;
+    0 -18px 40px -20px rgba(0, 0, 0, 0.7) inset;
   overflow: hidden;
   isolation: isolate;
 }
@@ -111,7 +147,7 @@
     var(--plinth-metal-b) 70%,
     var(--plinth-metal-a) 100%
   );
-  opacity: 0.9;
+  opacity: var(--plinth-metal-opacity);
 }
 .tt-plinth__noise {
   position: absolute;
@@ -180,6 +216,14 @@
   box-shadow:
     0 18px 40px -12px #000,
     0 0 0 2px #0a0a0c;
+}
+/* glass mode: let the feed ghost through the disc body while grooves, label
+   and the rotating accent arc stay fully solid so it still reads as vinyl */
+.tt-app[data-camera='on'] .tt-platter__metal {
+  opacity: var(--platter-glass);
+}
+.tt-app[data-camera='on'] .tt-vinyl__body {
+  fill-opacity: var(--vinyl-glass);
 }
 .tt-platter__rings {
   position: absolute;
@@ -250,6 +294,30 @@
 }
 .tt-tonearm {
   z-index: 3;
+}
+/* scratch hit-region guide, drawn over the disc when the camera is on */
+.tt-platter__zone {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4;
+  pointer-events: none;
+  overflow: visible;
+}
+.tt-platter__zone circle {
+  fill: none;
+  stroke: var(--zone-line);
+  stroke-width: 0.5;
+  stroke-dasharray: 2 2;
+}
+.tt-platter__zone-inner {
+  stroke-width: 0.7;
+}
+.tt-platter__zone-cross {
+  stroke: var(--zone-line);
+  stroke-width: 0.7;
+  stroke-linecap: round;
 }
 
 /* ===================== controls ===================== */
@@ -432,119 +500,97 @@
   color: var(--text-faint);
 }
 
-/* ===================== camera + HUD ===================== */
+/* ===================== camera control (header) ===================== */
 
-.tt-camera__frame {
+.tt-camctl {
   position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: 1px solid var(--hud-border);
-  background: var(--hud-bg);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-.tt-camera__video,
-.tt-camera__overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1); /* selfie mirror */
-}
-.tt-camera__video {
-  object-fit: cover;
-  background: #000;
-}
-.tt-camera__video[data-live='false'],
-.tt-camera__overlay[data-live='false'] {
-  opacity: 0;
-}
-.tt-camera__overlay {
-  transform: none; /* landmarks are drawn already-mirrored */
-  pointer-events: none;
-}
-.tt-camera__placeholder {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  padding: 18px;
+  background: rgba(0, 0, 0, 0.4);
   color: var(--text-secondary);
+  font: 600 11px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  cursor: pointer;
 }
-.tt-camera__dot {
-  display: inline-block;
+.tt-camctl:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.tt-camctl__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--text-faint);
-  margin-bottom: 10px;
 }
-.tt-camera__dot[data-pulse] {
+.tt-camctl[data-state='on'] {
+  color: var(--text-primary);
+  border-color: var(--backlight);
+}
+.tt-camctl[data-state='on'] .tt-camctl__dot {
+  background: #57d08a;
+  box-shadow: 0 0 8px #57d08a;
+}
+.tt-camctl[data-state='requesting'] .tt-camctl__dot {
   background: var(--backlight);
   animation: tt-pulse 1s ease-in-out infinite;
+}
+.tt-camctl[data-state='denied'],
+.tt-camctl[data-state='error'] {
+  color: var(--label-accent);
+  border-color: color-mix(in srgb, var(--label-accent) 60%, transparent);
+}
+.tt-camctl[data-state='denied'] .tt-camctl__dot,
+.tt-camctl[data-state='error'] .tt-camctl__dot {
+  background: var(--label-accent);
 }
 @keyframes tt-pulse {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 1; }
 }
-.tt-camera__msg {
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  margin: 0 0 4px;
-}
-.tt-camera__sub {
-  font-size: 11px;
-  color: var(--text-faint);
-  margin: 0 0 12px;
-  line-height: 1.5;
-}
-.tt-camera__placeholder button {
-  font-size: 11px;
-  padding: 6px 12px;
-  border-radius: 7px;
-  border: 1px solid var(--backlight);
-  background: var(--control-face);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-.tt-camera__diag {
-  margin: 0 0 12px;
+.tt-camctl__diag {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hud-border);
+  background: var(--hud-bg);
   font-family: ui-monospace, Menlo, monospace;
   font-size: 10px;
   line-height: 1.4;
+  letter-spacing: 0;
   color: var(--label-accent);
-  max-height: 5.6em;
-  overflow: auto;
+  text-align: left;
   word-break: break-word;
-}
-.tt-camera__stop {
-  position: absolute;
-  z-index: 3;
-  right: 8px;
-  bottom: 8px;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  padding: 4px 9px;
-  border-radius: 6px;
-  border: 1px solid var(--hud-border);
-  background: rgba(0, 0, 0, 0.55);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.tt-camera__tip {
-  margin: 8px 2px 0;
-  font-size: 11px;
-  color: var(--text-faint);
+  pointer-events: none;
 }
 
+/* ===================== gesture HUD (fixed left) ===================== */
+
 .tt-hud {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 260px;
+  max-height: min(72vh, 620px);
   border-radius: 12px;
   border: 1px solid var(--hud-border);
   background: var(--hud-bg);
-  min-height: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+.tt-hud[data-open='false'] {
+  width: auto;
 }
 .tt-hud__toggle {
   text-align: left;
@@ -659,22 +705,67 @@
   font-size: 11px;
 }
 
-/* ===================== crate ===================== */
+/* ===================== crate drawer (fixed right) ===================== */
 
 .tt-crate {
-  border-top: 1px solid var(--plinth-edge);
-  background: var(--crate-bg);
-  padding: 12px 20px 16px;
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: stretch;
+}
+.tt-crate__handle {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 6px;
+  border: 1px solid var(--hud-border);
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.tt-crate__handle-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.28em;
+}
+.tt-crate__handle-chev {
+  font-size: 10px;
+}
+.tt-crate__panel {
+  width: 300px;
+  max-height: min(80vh, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--hud-border);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: box-shadow 0.15s ease;
 }
-.tt-crate[data-dragover='true'] {
+.tt-crate[data-open='false'] .tt-crate__panel {
+  display: none;
+}
+.tt-crate[data-dragover='true'] .tt-crate__panel {
   box-shadow: 0 0 0 2px var(--backlight) inset;
 }
 .tt-crate__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 .tt-crate__head h2 {
   margin: 0;
@@ -682,40 +773,50 @@
   letter-spacing: 0.28em;
   color: var(--text-secondary);
 }
-.tt-crate__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.tt-crate__head button {
   font-size: 11px;
-  color: var(--text-faint);
-}
-.tt-crate__error {
-  color: var(--label-accent);
-}
-.tt-crate__actions button {
-  font-size: 11px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 7px;
   border: 1px solid var(--card-border);
   background: var(--card-face);
   color: var(--text-primary);
   cursor: pointer;
 }
-.tt-crate__strip {
+.tt-crate__hint {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-faint);
+}
+.tt-crate__hint[role='alert'] {
+  color: var(--label-accent);
+}
+.tt-crate__list {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.tt-crate__now {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--hud-border);
+  font-size: 11px;
+  color: var(--backlight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tt-card {
   --card-accent: var(--label-accent);
-  flex: 0 0 190px;
+  flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  grid-template-rows: auto 26px;
-  gap: 4px 10px;
-  padding: 10px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto 22px;
+  gap: 3px 10px;
+  padding: 9px;
   text-align: left;
   border-radius: 10px;
   border: 1px solid var(--card-border);
@@ -726,17 +827,17 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .tt-card:hover {
-  transform: translateY(-2px);
+  transform: translateX(-3px);
 }
 .tt-card[data-loaded='true'] {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 24px -8px var(--card-loaded-glow);
+  transform: translateX(-6px);
+  box-shadow: -8px 0 24px -10px var(--card-loaded-glow);
   border-color: var(--card-accent);
 }
 .tt-card__sleeve {
   grid-row: 1 / span 2;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
   background: #0c0c0e;
   display: grid;
@@ -744,8 +845,8 @@
   overflow: hidden;
 }
 .tt-card__disc {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 50%, var(--card-accent) 0 18%, #111 19% 100%);
   box-shadow: 0 0 0 1px #000;
@@ -783,7 +884,7 @@
 .tt-card__wave {
   grid-column: 2;
   width: 100%;
-  height: 26px;
+  height: 22px;
 }
 .tt-card__loadbar {
   position: absolute;
@@ -880,11 +981,26 @@
 
 /* ===================== responsive fallback ===================== */
 
-@media (max-width: 1180px) {
-  .tt-app__main {
-    grid-template-columns: minmax(0, 1fr);
+/* below this the HUD would collide with the deck — dock it bottom-left,
+   collapsed by default the user can still open it. */
+@media (max-width: 1100px) {
+  .tt-hud {
+    top: auto;
+    bottom: 12px;
+    transform: none;
+    max-height: 45vh;
   }
-  .tt-app__side {
-    display: none;
+}
+@media (max-width: 820px) {
+  .tt-app__stage {
+    padding: 12px;
+  }
+  .tt-hud {
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+  .tt-crate__panel {
+    width: min(74vw, 300px);
   }
 }

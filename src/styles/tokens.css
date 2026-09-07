@@ -25,6 +25,13 @@
   --plinth-edge: #0c0c0e;
   --plinth-shadow: rgba(0, 0, 0, 0.6);
   --plinth-noise-opacity: 0.04;
+  /* glass mode: translucent chassis so the camera feed reads through it */
+  --plinth-fill: rgba(20, 21, 24, 0.5);
+  --plinth-metal-opacity: 0.34;
+  --plinth-blur: 12px;
+  --platter-glass: 0.5; /* metal disc opacity in glass mode */
+  --vinyl-glass: 0.66; /* vinyl body opacity in glass mode */
+  --zone-line: rgba(255, 202, 138, 0.7);
 
   /* ---- platter (metal disc under the vinyl) -------------------------- */
   --platter-metal-a: #3a3b3f;

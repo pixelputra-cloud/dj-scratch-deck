@@ -5,6 +5,7 @@ import {
 } from '../state/deckController'
 import { useDeckStore } from '../state/useDeckStore'
 import { HandTracker, type RawHand } from './HandTracker'
+import type { Point } from './poseCodes'
 
 /** MediaPipe 21-point skeleton. */
 const CONNECTIONS: [number, number][] = [
@@ -15,13 +16,30 @@ const CONNECTIONS: [number, number][] = [
   [13, 17], [17, 18], [18, 19], [19, 20],
   [0, 17],
 ]
-const CAM_SPAN = 1.15 // keep in sync with gestureMachine
 
 /**
- * Owns the HandTracker lifecycle for the camera panel: starts/stops the
- * webcam + worker, feeds every result into the gesture machine, and paints
- * the mirrored landmark overlay so a user can see *why* tracking isn't working
- * (PRD §4.3, §6.5).
+ * `object-fit: cover` projection: the full-page <video> is mirrored and cover-
+ * fitted to the viewport, so a normalised camera point maps to viewport px
+ * through the same scale+crop. Returns a fn taking a MIRRORED normalised point.
+ */
+function makeProjector(video: HTMLVideoElement | null): (n: Point) => Point {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const iw = video?.videoWidth || 640
+  const ih = video?.videoHeight || 480
+  const scale = Math.max(vw / iw, vh / ih)
+  const dw = iw * scale
+  const dh = ih * scale
+  const ox = (vw - dw) / 2
+  const oy = (vh - dh) / 2
+  return (n: Point) => ({ x: ox + n.x * dw, y: oy + n.y * dh })
+}
+
+/**
+ * Owns the HandTracker lifecycle for the full-page gesture backdrop: starts /
+ * stops the webcam, feeds every result into the gesture machine, and paints
+ * the mirrored landmark skeleton across the whole viewport so a user can see
+ * exactly where their hands are relative to the deck (PRD §4.3, §6.5).
  */
 export function useGestureTracking(
   videoRef: React.RefObject<HTMLVideoElement | null>,
@@ -32,88 +50,71 @@ export function useGestureTracking(
   const setCameraError = useDeckStore((s) => s.setCameraError)
   const sawResult = useRef(false)
 
-  const draw = useCallback(
-    (raw: RawHand[]) => {
-      const canvas = canvasRef.current
-      const video = videoRef.current
-      if (!canvas || !video) return
-      const w = canvas.clientWidth
-      const h = canvas.clientHeight
+  const sizeCanvas = useCallback(
+    (canvas: HTMLCanvasElement) => {
       const dpr = window.devicePixelRatio || 1
+      const w = window.innerWidth
+      const h = window.innerHeight
       if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
         canvas.width = w * dpr
         canvas.height = h * dpr
+        canvas.style.width = `${w}px`
+        canvas.style.height = `${h}px`
       }
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.save()
-      ctx.scale(dpr, dpr)
-      ctx.clearRect(0, 0, w, h)
-
-      // scratch-zone guide: the camera frame maps to a square 2·CAM_SPAN
-      // platter-radii wide, so the platter fills the middle 1/CAM_SPAN.
-      const zoneR = w / (2 * CAM_SPAN)
-      ctx.strokeStyle = 'rgba(255,158,61,0.28)'
-      ctx.setLineDash([4, 4])
-      ctx.beginPath()
-      ctx.arc(w / 2, h / 2, Math.min(zoneR, h / 2 - 2), 0, Math.PI * 2)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.arc(w / 2, h / 2, Math.min(zoneR, h / 2 - 2) * 0.18, 0, Math.PI * 2)
-      ctx.stroke()
-      ctx.setLineDash([])
-
-      // x is mirrored to match the CSS-mirrored selfie video
-      const px = (nx: number) => (1 - nx) * w
-      const py = (ny: number) => ny * h
-
-      for (const hand of raw) {
-        const lm = hand.landmarks
-        ctx.strokeStyle = 'rgba(255,158,61,0.5)'
-        ctx.lineWidth = 2
-        for (const [a, b] of CONNECTIONS) {
-          ctx.beginPath()
-          ctx.moveTo(px(lm[a].x), py(lm[a].y))
-          ctx.lineTo(px(lm[b].x), py(lm[b].y))
-          ctx.stroke()
-        }
-        ctx.fillStyle = '#ff9e3d'
-        for (const p of lm) {
-          ctx.beginPath()
-          ctx.arc(px(p.x), py(p.y), 2.6, 0, Math.PI * 2)
-          ctx.fill()
-        }
-      }
-      ctx.restore()
+      return { dpr, w, h }
     },
-    [canvasRef, videoRef],
+    [],
   )
 
-  const drawDwell = useCallback(
-    (hands: { centroid: { x: number; y: number }; dwellProgress: number }[]) => {
+  const paint = useCallback(
+    (
+      raw: RawHand[],
+      dwell: { centroid: Point; dwellProgress: number }[],
+    ) => {
       const canvas = canvasRef.current
+      const video = videoRef.current
       if (!canvas) return
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-      const w = canvas.clientWidth
-      const h = canvas.clientHeight
-      const dpr = window.devicePixelRatio || 1
+      const { dpr } = sizeCanvas(canvas)
+      const project = makeProjector(video)
+
       ctx.save()
       ctx.scale(dpr, dpr)
-      for (const hnd of hands) {
-        if (hnd.dwellProgress <= 0) continue
-        const cx = (1 - hnd.centroid.x) * w
-        const cy = hnd.centroid.y * h
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+
+      for (const hand of raw) {
+        const pts = hand.landmarks.map((p) => project({ x: 1 - p.x, y: p.y }))
+        ctx.strokeStyle = 'rgba(255,158,61,0.55)'
+        ctx.lineWidth = 3
+        ctx.lineCap = 'round'
+        for (const [a, b] of CONNECTIONS) {
+          ctx.beginPath()
+          ctx.moveTo(pts[a].x, pts[a].y)
+          ctx.lineTo(pts[b].x, pts[b].y)
+          ctx.stroke()
+        }
+        ctx.fillStyle = '#ff9e3d'
+        for (const p of pts) {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+
+      for (const d of dwell) {
+        if (d.dwellProgress <= 0) continue
+        const c = project(d.centroid) // centroid is already mirrored
         ctx.beginPath()
-        ctx.arc(cx, cy, 22, -Math.PI / 2, -Math.PI / 2 + hnd.dwellProgress * Math.PI * 2)
+        ctx.arc(c.x, c.y, 30, -Math.PI / 2, -Math.PI / 2 + d.dwellProgress * Math.PI * 2)
         ctx.strokeStyle = '#ffd08a'
-        ctx.lineWidth = 4
+        ctx.lineWidth = 5
         ctx.lineCap = 'round'
         ctx.stroke()
       }
       ctx.restore()
     },
-    [canvasRef],
+    [canvasRef, videoRef, sizeCanvas],
   )
 
   const enable = useCallback(() => {
@@ -129,14 +130,14 @@ export function useGestureTracking(
           sawResult.current = true
           console.info('[gesture] first landmark frame received')
         }
-        const result = processGestureResult(hands, ts)
-        draw(hands)
-        drawDwell(result.hands)
+        const project = makeProjector(videoRef.current)
+        const result = processGestureResult(hands, ts, project)
+        paint(hands, result.hands)
       },
     })
     trackerRef.current = tracker
     void tracker.start()
-  }, [videoRef, setCameraState, setCameraError, draw, drawDwell])
+  }, [videoRef, setCameraState, setCameraError, paint])
 
   const disable = useCallback(() => {
     trackerRef.current?.stop()

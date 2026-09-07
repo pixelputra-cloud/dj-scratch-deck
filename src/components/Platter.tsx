@@ -25,6 +25,7 @@ interface Props {
  */
 export function Platter({ vinylRef, strobeRef }: Props) {
   const powered = useDeckStore((s) => s.powered)
+  const cameraOn = useDeckStore((s) => s.cameraState === 'on')
   const scratchingRef = useRef(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -82,6 +83,17 @@ export function Platter({ vinylRef, strobeRef }: Props) {
       <div className="tt-platter__sheen" aria-hidden />
       <div className="tt-platter__rim" aria-hidden />
       <Spindle />
+
+      {/* scratch hit-region guide — the camera frame maps straight onto this
+          disc, so these dashed rings show exactly where a fingertip catches. */}
+      {cameraOn ? (
+        <svg className="tt-platter__zone" viewBox="0 0 100 100" aria-hidden>
+          <circle cx="50" cy="50" r="49" className="tt-platter__zone-outer" />
+          <circle cx="50" cy="50" r="9" className="tt-platter__zone-inner" />
+          <line x1="46" y1="50" x2="54" y2="50" className="tt-platter__zone-cross" />
+          <line x1="50" y1="46" x2="50" y2="54" className="tt-platter__zone-cross" />
+        </svg>
+      ) : null}
     </div>
   )
 }

@@ -1,10 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import './index.css'
-import { CameraPanel } from './components/CameraPanel'
+import { CameraControl } from './components/CameraControl'
 import { Crate } from './components/Crate'
 import { Deck } from './components/Deck'
+import { GestureBackdrop } from './components/GestureBackdrop'
 import { GestureHUD } from './components/GestureHUD'
 import { PowerGate } from './components/PowerGate'
+import { useGestureTracking } from './gesture/useGestureTracking'
 import { setDeckLoop } from './state/deckController'
 import { useDeckStore } from './state/useDeckStore'
 import { bundledCrate } from './tracks/loadManifest'
@@ -14,13 +16,20 @@ export default function App() {
   const loop = useDeckStore((s) => s.loop)
   const powered = useDeckStore((s) => s.powered)
   const loadedTrack = useDeckStore((s) => s.loadedTrack)
+  const cameraState = useDeckStore((s) => s.cameraState)
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { enable, disable } = useGestureTracking(videoRef, canvasRef)
 
   useEffect(() => {
     setCrate(bundledCrate())
   }, [setCrate])
 
   return (
-    <div className="tt-app">
+    <div className="tt-app" data-camera={cameraState}>
+      <GestureBackdrop videoRef={videoRef} canvasRef={canvasRef} />
+
       <header className="tt-app__header">
         <div className="tt-app__brand">
           <span className="tt-app__logo" aria-hidden />
@@ -39,19 +48,15 @@ export default function App() {
             />
             loop
           </label>
+          <CameraControl onEnable={enable} onDisable={disable} />
         </div>
       </header>
 
-      <main className="tt-app__main">
-        <div className="tt-app__deckcol">
-          <Deck />
-        </div>
-        <aside className="tt-app__side">
-          <CameraPanel />
-          <GestureHUD />
-        </aside>
+      <main className="tt-app__stage">
+        <Deck />
       </main>
 
+      <GestureHUD />
       <Crate />
 
       <PowerGate />

@@ -61,7 +61,7 @@ export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
 
       <g ref={ref}>
         {/* disc body */}
-        <circle cx="50" cy="50" r="49" fill="url(#vinylBody)" />
+        <circle cx="50" cy="50" r="49" fill="url(#vinylBody)" className="tt-vinyl__body" />
 
         {/* machined groove field */}
         <g fill="none" strokeLinecap="round">
