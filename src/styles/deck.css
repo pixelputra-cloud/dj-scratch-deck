@@ -115,82 +115,32 @@
   padding: 24px;
 }
 
-/* ===================== plinth ===================== */
+/* ===================== deck (no chassis) ===================== */
 
+/* the deck fills the stage; platter stacked over the floating control bar,
+   the whole group centred. Flex handles the spacing so nothing can overlap. */
 .tt-deck {
-  width: min(760px, 92vw);
-}
-.tt-plinth {
-  position: relative;
-  aspect-ratio: 4 / 2.9;
-  border-radius: var(--radius-plinth);
-  /* translucent chassis — the camera feed reads through it */
-  background: var(--plinth-fill);
-  backdrop-filter: blur(var(--plinth-blur)) saturate(1.15);
-  -webkit-backdrop-filter: blur(var(--plinth-blur)) saturate(1.15);
-  box-shadow:
-    0 40px 90px -30px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 2px 0 0 var(--plinth-bevel-hi) inset,
-    0 -18px 40px -20px rgba(0, 0, 0, 0.7) inset;
-  overflow: hidden;
-  isolation: isolate;
-}
-.tt-plinth__metal {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    118deg,
-    var(--plinth-metal-a) 0%,
-    var(--plinth-metal-b) 38%,
-    var(--plinth-metal-a) 52%,
-    var(--plinth-metal-b) 70%,
-    var(--plinth-metal-a) 100%
-  );
-  opacity: var(--plinth-metal-opacity);
-}
-.tt-plinth__noise {
-  position: absolute;
-  inset: 0;
-  opacity: var(--plinth-noise-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-.tt-plinth__bevel {
-  position: absolute;
-  inset: 6px;
-  border-radius: calc(var(--radius-plinth) - 6px);
-  box-shadow:
-    0 1px 0 var(--plinth-bevel-hi) inset,
-    0 -1px 0 var(--plinth-bevel-lo) inset;
-  pointer-events: none;
-}
-.tt-plinth__inner {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 26px 30px;
+  justify-content: center;
+  gap: clamp(14px, 3vh, 34px);
+  padding: 58px 16px 22px;
 }
 
 /* ===================== platter ===================== */
 
-.tt-deck__platterbay {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-width: 0;
-}
 .tt-platter {
   position: relative;
-  width: min(46vh, 380px);
+  flex: 0 0 auto;
+  width: min(56vh, 54vw, 520px);
   aspect-ratio: 1;
   border-radius: 50%;
   touch-action: none;
   cursor: default;
+  filter: drop-shadow(0 40px 70px rgba(0, 0, 0, 0.7));
 }
 .tt-platter[data-powered='true'] {
   cursor: grab;
@@ -238,8 +188,7 @@
 }
 .tt-platter .tt-vinyl,
 .tt-platter .tt-strobe,
-.tt-platter .tt-spindle,
-.tt-platter .tt-tonearm {
+.tt-platter .tt-spindle {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -292,9 +241,6 @@
 .tt-strobe {
   filter: drop-shadow(0 0 1px var(--glow));
 }
-.tt-tonearm {
-  z-index: 3;
-}
 /* scratch hit-region guide, drawn over the disc when the camera is on */
 .tt-platter__zone {
   position: absolute;
@@ -320,35 +266,45 @@
   stroke-linecap: round;
 }
 
-/* ===================== controls ===================== */
+/* ===================== floating control bar ===================== */
 
 .tt-deck__controls {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 18px;
-  height: 100%;
-  align-content: start;
-}
-.tt-deck__control-row {
+  flex: 0 0 auto;
+  z-index: 6;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--hud-border);
+  background: var(--hud-bg);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.8);
 }
 
+/* start / stop — round button */
 .tt-start {
   position: relative;
-  height: 60px;
-  border-radius: var(--radius-control);
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
   border: 1px solid var(--control-edge);
-  background: linear-gradient(180deg, var(--card-face-hi), var(--control-face));
+  background: radial-gradient(circle at 42% 36%, var(--card-face-hi), var(--control-face) 78%);
   color: var(--control-text);
-  font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.22em;
+  font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.14em;
   cursor: pointer;
   transition: transform var(--press-ms) ease;
 }
+.tt-start__label {
+  position: relative;
+  z-index: 1;
+}
 .tt-start:active {
-  transform: translateY(1px);
+  transform: scale(0.96);
 }
 .tt-start:disabled {
   opacity: 0.4;
@@ -356,31 +312,33 @@
 }
 .tt-start__ring {
   position: absolute;
-  inset: 8px;
-  border-radius: 8px;
+  inset: 7px;
+  border-radius: 50%;
   border: 2px solid var(--backlight-dim);
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .tt-start[data-on='true'] .tt-start__ring {
   border-color: var(--backlight);
-  box-shadow: 0 0 18px var(--glow), 0 0 6px var(--glow) inset;
+  box-shadow: 0 0 20px var(--glow), 0 0 8px var(--glow) inset;
 }
 .tt-start[data-on='true'] {
   color: var(--text-primary);
 }
 
+/* 33 / 45 — vertical stacked pills */
 .tt-speed {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 .tt-speed__btn {
-  flex: 1;
-  height: 42px;
-  border-radius: var(--radius-control);
+  width: 52px;
+  height: 34px;
+  border-radius: 9px;
   border: 1px solid var(--control-edge);
   background: linear-gradient(180deg, var(--card-face-hi), var(--control-face));
   color: var(--text-secondary);
-  font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+  font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
   cursor: pointer;
   transition: transform var(--press-ms) ease;
 }
@@ -401,13 +359,12 @@
   box-shadow: 0 0 14px var(--glow), 0 0 4px var(--backlight-dim) inset;
 }
 
-/* pitch fader */
+/* pitch fader — compact column */
 .tt-pitch {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  height: 100%;
-  min-height: 190px;
+  grid-template-rows: auto 96px auto;
+  gap: 6px;
+  width: 74px;
 }
 .tt-pitch__head {
   display: flex;
@@ -415,17 +372,17 @@
   justify-content: space-between;
 }
 .tt-pitch__readout {
-  font: 700 13px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  font: 700 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--text-primary);
 }
 .tt-pitch__readout[data-detent='true'] {
   color: var(--backlight);
 }
 .tt-pitch__range {
-  font: 600 10px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.08em;
-  padding: 4px 7px;
-  border-radius: 6px;
+  font: 600 9px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  padding: 3px 5px;
+  border-radius: 5px;
   border: 1px solid var(--control-edge);
   background: var(--control-face);
   color: var(--text-secondary);
@@ -433,7 +390,8 @@
 }
 .tt-pitch__track {
   position: relative;
-  width: 46px;
+  width: 42px;
+  height: 100%;
   justify-self: center;
   border-radius: 8px;
   background: linear-gradient(90deg, #0d0e10, var(--fader-track), #0d0e10);
