@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { PITCH_DETENT_WIDTH, PITCH_RANGE_DEFAULT } from '../lib/constants'
+import { PITCH_DETENT_WIDTH } from '../lib/constants'
 import { clamp } from '../lib/math'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
- * Vertical pitch fader (PRD §5.6). Drag now; pinch gesture in Phase 3.
- * Top = faster (+range) to match PINCH-PITCH's "hand up = faster".
- * Detent at 0% is enforced in the store; here it just gets a visual click.
+ * Pitch fader (PRD §5.6), horizontal + low-profile so it floats in the
+ * bottom control cluster without a housing. Right = faster (+range).
+ * The 0% detent is enforced in the store; here it just gets a visual click.
+ * Drag with the mouse; the PINCH gesture sets the value directly.
  */
 export function PitchFader() {
   const pitch = useDeckStore((s) => s.pitchPercent)
@@ -31,14 +32,14 @@ export function PitchFader() {
   }, [pitch])
 
   const pointerToPitch = useCallback(
-    (clientY: number) => {
+    (clientX: number) => {
       const el = trackRef.current
       if (!el) return 0
       const r = el.getBoundingClientRect()
-      const pad = r.height * 0.08 // matches cap half-height in CSS
-      const usable = r.height - pad * 2
-      const frac = clamp((clientY - r.top - pad) / usable, 0, 1) // 0 top .. 1 bottom
-      return (0.5 - frac) * 2 * range // top -> +range, bottom -> -range
+      const pad = r.width * 0.06
+      const usable = r.width - pad * 2
+      const frac = clamp((clientX - r.left - pad) / usable, 0, 1) // 0 left .. 1 right
+      return (frac - 0.5) * 2 * range // left -> -range, right -> +range
     },
     [range],
   )
@@ -47,11 +48,11 @@ export function PitchFader() {
     if (!powered) return
     dragging.current = true
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
-    setPitchPercent(pointerToPitch(e.clientY))
+    setPitchPercent(pointerToPitch(e.clientX))
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging.current) return
-    setPitchPercent(pointerToPitch(e.clientY))
+    setPitchPercent(pointerToPitch(e.clientX))
   }
   const endDrag = (e: React.PointerEvent) => {
     dragging.current = false
@@ -60,10 +61,10 @@ export function PitchFader() {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!powered) return
     const step = e.shiftKey ? 1 : 0.1
-    if (e.key === 'ArrowUp') {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
       e.preventDefault()
       setPitchPercent(pitch + step)
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
       e.preventDefault()
       setPitchPercent(pitch - step)
     } else if (e.key === 'Home' || e.key === '0') {
@@ -71,25 +72,15 @@ export function PitchFader() {
     }
   }
 
-  // cap position 0 (top) .. 1 (bottom)
-  const frac = 0.5 - pitch / (2 * range)
+  const frac = 0.5 + pitch / (2 * range)
+  const inDetent = Math.abs(pitch) < PITCH_DETENT_WIDTH
   const readout = `${pitch >= 0 ? '+' : ''}${(pitch === 0 ? 0 : pitch).toFixed(1)}%`
 
   return (
     <div className="tt-pitch">
-      <div className="tt-pitch__head">
-        <span className="tt-pitch__readout" data-detent={Math.abs(pitch) < PITCH_DETENT_WIDTH}>
-          {readout}
-        </span>
-        <button
-          type="button"
-          className="tt-pitch__range"
-          onClick={togglePitchRange}
-          aria-label={`Pitch range, currently plus or minus ${range} percent`}
-        >
-          ±{range}
-        </button>
-      </div>
+      <span className="tt-pitch__readout" data-detent={inDetent}>
+        {readout}
+      </span>
 
       <div
         ref={trackRef}
@@ -109,20 +100,24 @@ export function PitchFader() {
         onPointerCancel={endDrag}
         onKeyDown={onKeyDown}
       >
-        <span className="tt-pitch__scale" aria-hidden />
         <span className="tt-pitch__zero" aria-hidden />
         <span
           className="tt-pitch__cap"
           aria-hidden
-          style={{ top: `calc(${frac * 100}% )` }}
+          style={{ left: `${frac * 100}%` }}
         >
           <span className="tt-pitch__cap-line" />
         </span>
       </div>
 
-      <span className="tt-pitch__caption">
-        {range === PITCH_RANGE_DEFAULT ? 'PITCH ADJ' : 'PITCH ADJ ·WIDE'}
-      </span>
+      <button
+        type="button"
+        className="tt-pitch__range"
+        onClick={togglePitchRange}
+        aria-label={`Pitch range, currently plus or minus ${range} percent`}
+      >
+        ±{range}
+      </button>
     </div>
   )
 }

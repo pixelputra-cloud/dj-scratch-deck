@@ -105,42 +105,36 @@
   letter-spacing: 0.08em;
 }
 
-/* centred deck stage ------------------------------------------------- */
+/* the disc owns the stage ------------------------------------------- */
 .tt-app__stage {
   position: absolute;
   inset: 0;
   z-index: 5;
   display: grid;
   place-items: center;
-  padding: 24px;
 }
 
 /* ===================== deck (no chassis) ===================== */
 
-/* the deck fills the stage; platter stacked over the floating control bar,
-   the whole group centred. Flex handles the spacing so nothing can overlap. */
+/* the disc owns the screen; the controls just float over its lower edge */
 .tt-deck {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(14px, 3vh, 34px);
-  padding: 58px 16px 22px;
+  display: grid;
+  place-items: center;
+  padding: 40px 8px 8px;
 }
 
 /* ===================== platter ===================== */
 
 .tt-platter {
   position: relative;
-  flex: 0 0 auto;
-  width: min(56vh, 54vw, 520px);
+  width: min(88vh, 92vw);
   aspect-ratio: 1;
   border-radius: 50%;
   touch-action: none;
   cursor: default;
-  filter: drop-shadow(0 40px 70px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.65));
 }
 .tt-platter[data-powered='true'] {
   cursor: grab;
@@ -266,21 +260,21 @@
   stroke-linecap: round;
 }
 
-/* ===================== floating control bar ===================== */
+/* ============ floating controls (no housing, low profile) ============ */
 
 .tt-deck__controls {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2.5vh, 22px);
+  transform: translateX(-50%);
   z-index: 6;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
-  border-radius: 18px;
-  border: 1px solid var(--hud-border);
-  background: var(--hud-bg);
-  backdrop-filter: blur(12px) saturate(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.8);
+  gap: 14px;
+  /* each control carries its own faint backing to stay legible over the disc */
+}
+.tt-deck__controls > * {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
 }
 
 /* start / stop — round button */
@@ -288,14 +282,14 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   border: 1px solid var(--control-edge);
   background: radial-gradient(circle at 42% 36%, var(--card-face-hi), var(--control-face) 78%);
   color: var(--control-text);
-  font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.14em;
+  font: 700 10px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.1em;
   cursor: pointer;
   transition: transform var(--press-ms) ease;
 }
@@ -304,7 +298,7 @@
   z-index: 1;
 }
 .tt-start:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 .tt-start:disabled {
   opacity: 0.4;
@@ -312,33 +306,32 @@
 }
 .tt-start__ring {
   position: absolute;
-  inset: 7px;
+  inset: 5px;
   border-radius: 50%;
   border: 2px solid var(--backlight-dim);
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .tt-start[data-on='true'] .tt-start__ring {
   border-color: var(--backlight);
-  box-shadow: 0 0 20px var(--glow), 0 0 8px var(--glow) inset;
+  box-shadow: 0 0 18px var(--glow), 0 0 6px var(--glow) inset;
 }
 .tt-start[data-on='true'] {
   color: var(--text-primary);
 }
 
-/* 33 / 45 — vertical stacked pills */
+/* 33 / 45 — two small side-by-side buttons */
 .tt-speed {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 .tt-speed__btn {
-  width: 52px;
-  height: 34px;
-  border-radius: 9px;
+  width: 40px;
+  height: 30px;
+  border-radius: 8px;
   border: 1px solid var(--control-edge);
   background: linear-gradient(180deg, var(--card-face-hi), var(--control-face));
   color: var(--text-secondary);
-  font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+  font: 700 12px/1 ui-sans-serif, system-ui, sans-serif;
   cursor: pointer;
   transition: transform var(--press-ms) ease;
 }
@@ -350,30 +343,27 @@
   cursor: not-allowed;
 }
 .tt-speed__frac {
-  font-size: 9px;
+  font-size: 8px;
   vertical-align: super;
 }
 .tt-speed__btn[data-on='true'] {
   color: var(--text-primary);
   border-color: var(--backlight);
-  box-shadow: 0 0 14px var(--glow), 0 0 4px var(--backlight-dim) inset;
+  box-shadow: 0 0 12px var(--glow), 0 0 4px var(--backlight-dim) inset;
 }
 
-/* pitch fader — compact column */
+/* pitch fader — horizontal, ~20px tall */
 .tt-pitch {
-  display: grid;
-  grid-template-rows: auto 96px auto;
-  gap: 6px;
-  width: 74px;
-}
-.tt-pitch__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
 }
 .tt-pitch__readout {
+  min-width: 42px;
+  text-align: right;
   font: 700 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--text-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .tt-pitch__readout[data-detent='true'] {
   color: var(--backlight);
@@ -381,7 +371,7 @@
 .tt-pitch__range {
   font: 600 9px/1 ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.06em;
-  padding: 3px 5px;
+  padding: 4px 6px;
   border-radius: 5px;
   border: 1px solid var(--control-edge);
   background: var(--control-face);
@@ -390,49 +380,35 @@
 }
 .tt-pitch__track {
   position: relative;
-  width: 42px;
-  height: 100%;
-  justify-self: center;
-  border-radius: 8px;
-  background: linear-gradient(90deg, #0d0e10, var(--fader-track), #0d0e10);
+  width: clamp(90px, 12vw, 150px);
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0d0e10, var(--fader-track));
   border: 1px solid var(--control-edge);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) inset;
   touch-action: none;
-  cursor: ns-resize;
+  cursor: ew-resize;
 }
 .tt-pitch__track[aria-disabled='true'] {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.tt-pitch__scale {
-  position: absolute;
-  left: 50%;
-  top: 8%;
-  bottom: 8%;
-  width: 2px;
-  transform: translateX(-50%);
-  background: repeating-linear-gradient(
-    180deg,
-    var(--text-faint) 0 1px,
-    transparent 1px 9px
-  );
-}
 .tt-pitch__zero {
   position: absolute;
-  left: 6px;
-  right: 6px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  transform: translateX(-50%);
   background: var(--fader-detent);
   box-shadow: 0 0 8px var(--fader-detent);
 }
 .tt-pitch__cap {
   position: absolute;
-  left: -7px;
-  right: -7px;
-  height: 16%;
-  transform: translateY(-50%);
+  top: 50%;
+  width: 14px;
+  height: 26px;
+  transform: translate(-50%, -50%);
   border-radius: 5px;
   background: linear-gradient(180deg, var(--fader-cap-a), var(--fader-cap-b));
   border: 1px solid var(--control-edge);
@@ -440,22 +416,16 @@
 }
 .tt-pitch__cap-line {
   position: absolute;
-  left: 6px;
-  right: 6px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
+  top: 5px;
+  bottom: 5px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
   background: var(--backlight);
   box-shadow: 0 0 8px var(--glow);
 }
 .tt-pitch__track[data-detent-flash='true'] .tt-pitch__zero {
   box-shadow: 0 0 16px 3px var(--backlight);
-}
-.tt-pitch__caption {
-  text-align: center;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  color: var(--text-faint);
 }
 
 /* ===================== camera control (header) ===================== */
@@ -939,20 +909,17 @@
 
 /* ===================== responsive fallback ===================== */
 
-/* below this the HUD would collide with the deck — dock it bottom-left,
-   collapsed by default the user can still open it. */
+/* below this the HUD would collide with the disc — dock it low-left, clear of
+   the floating control cluster. Collapsed, the user can still open it. */
 @media (max-width: 1100px) {
   .tt-hud {
     top: auto;
-    bottom: 12px;
+    bottom: 84px;
     transform: none;
-    max-height: 45vh;
+    max-height: 40vh;
   }
 }
 @media (max-width: 820px) {
-  .tt-app__stage {
-    padding: 12px;
-  }
   .tt-hud {
     left: 8px;
     right: 8px;
