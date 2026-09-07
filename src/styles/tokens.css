@@ -1,0 +1,92 @@
+/*
+ * tokens.css — the single themeable surface for the whole deck.
+ *
+ * PRD §9.4: the later art-direction phase should be a change to THIS FILE
+ * plus texture assets and nothing else. Every colour, glow, metal sweep and
+ * texture reference used by a component must resolve to a variable declared
+ * here. If a component hard-codes a hex value, that is a bug.
+ *
+ * v1 default look (PRD §9.1): dark studio, warm key light from upper-left,
+ * brushed dark-aluminium plinth, matte-black vinyl, warm-amber backlighting.
+ */
+
+:root {
+  /* ---- surface / background ---------------------------------------- */
+  --stage-bg: #0a0a0c;
+  --stage-vignette: rgba(0, 0, 0, 0.65);
+  --key-light: rgba(255, 214, 170, 0.14); /* warm, upper-left */
+
+  /* ---- plinth (chassis) ------------------------------------------------ */
+  --plinth-base: #1c1d20;
+  --plinth-metal-a: #2b2d31; /* brushed sweep light stop */
+  --plinth-metal-b: #141517; /* brushed sweep dark stop  */
+  --plinth-bevel-hi: rgba(255, 255, 255, 0.10);
+  --plinth-bevel-lo: rgba(0, 0, 0, 0.55);
+  --plinth-edge: #0c0c0e;
+  --plinth-shadow: rgba(0, 0, 0, 0.6);
+  --plinth-noise-opacity: 0.04;
+
+  /* ---- platter (metal disc under the vinyl) -------------------------- */
+  --platter-metal-a: #3a3b3f;
+  --platter-metal-b: #202124;
+  --platter-rim-hi: rgba(255, 255, 255, 0.22);
+  --platter-ring: rgba(255, 255, 255, 0.05); /* concentric machining */
+
+  /* ---- vinyl -------------------------------------------------------- */
+  --vinyl-base: #101012;
+  --vinyl-groove: rgba(255, 255, 255, 0.05);
+  --vinyl-groove-strong: rgba(255, 255, 255, 0.09);
+  --vinyl-sheen: rgba(255, 236, 200, 0.16); /* specular arc */
+  --label-base: #d99a2b; /* warm amber */
+  --label-ink: #23160a;
+  --label-accent: #c8452e; /* per-track override sets this */
+
+  /* ---- spindle ---------------------------------------------------- */
+  --spindle-a: #cfcfd4;
+  --spindle-b: #6b6c70;
+  --spindle-shadow: rgba(0, 0, 0, 0.5);
+
+  /* ---- controls / backlight -------------------------------------- */
+  --control-face: #212226;
+  --control-edge: #0d0e10;
+  --control-text: #b8bcc4;
+  --backlight: #ff9e3d; /* amber start/speed backlight */
+  --backlight-dim: rgba(255, 158, 61, 0.22);
+  --glow: rgba(255, 158, 61, 0.55);
+
+  /* ---- pitch fader --------------------------------------------- */
+  --fader-track: #141517;
+  --fader-track-lit: rgba(255, 158, 61, 0.35);
+  --fader-cap-a: #3b3c41;
+  --fader-cap-b: #17181b;
+  --fader-detent: rgba(255, 255, 255, 0.5);
+
+  /* ---- strobe ring ------------------------------------------- */
+  --strobe: rgba(255, 255, 255, 0.62);
+  --strobe-dim: rgba(255, 255, 255, 0.14);
+
+  /* ---- text --------------------------------------------------- */
+  --text-primary: #e9eaed;
+  --text-secondary: #8a8d95;
+  --text-faint: #55575d;
+
+  /* ---- crate ------------------------------------------------- */
+  --crate-bg: #121316;
+  --card-face: #1b1c1f;
+  --card-face-hi: #26272b;
+  --card-border: #313338;
+  --card-loaded-glow: rgba(255, 158, 61, 0.4);
+  --waveform: #6f727a;
+
+  /* ---- HUD / camera ---------------------------------------- */
+  --hud-bg: rgba(14, 15, 18, 0.92);
+  --hud-border: #2c2e33;
+  --landmark: #ff9e3d;
+  --landmark-bone: rgba(255, 158, 61, 0.5);
+  --dwell-ring: #ffd08a;
+
+  /* ---- geometry / timing (non-colour tokens) -------------- */
+  --radius-plinth: 22px;
+  --radius-control: 10px;
+  --press-ms: 90ms;
+}

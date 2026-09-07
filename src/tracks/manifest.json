@@ -1,0 +1,71 @@
+{
+  "_note": "v1 crate. These six loops are procedurally synthesized from scratch (see scripts/make_loops.mjs) — no sampled material, so they are CC0 by origin. Phase 4 replaces them with curated, licence-verified tracks from Free Music Archive / ccMixter / Pixabay per PRD §8.1. Every entry must keep a verified `license` and `sourceUrl`.",
+  "tracks": [
+    {
+      "id": "boombap-90",
+      "title": "Dusty Corner",
+      "artist": "Deck Procedural",
+      "bpm": 90,
+      "file": "/audio/boombap-90.wav",
+      "labelColor": "#c8452e",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    },
+    {
+      "id": "amen-140",
+      "title": "Chop Shop",
+      "artist": "Deck Procedural",
+      "bpm": 140,
+      "file": "/audio/amen-140.wav",
+      "labelColor": "#e0a92e",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    },
+    {
+      "id": "house-124",
+      "title": "Basement Floor",
+      "artist": "Deck Procedural",
+      "bpm": 124,
+      "file": "/audio/house-124.wav",
+      "labelColor": "#3f8f7a",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    },
+    {
+      "id": "stabs-96",
+      "title": "Orchestra Hit",
+      "artist": "Deck Procedural",
+      "bpm": 96,
+      "file": "/audio/stabs-96.wav",
+      "labelColor": "#7a5bd0",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    },
+    {
+      "id": "dnb-172",
+      "title": "Rollage",
+      "artist": "Deck Procedural",
+      "bpm": 172,
+      "file": "/audio/dnb-172.wav",
+      "labelColor": "#4a7ad0",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    },
+    {
+      "id": "funk-100",
+      "title": "Ghost Notes",
+      "artist": "Deck Procedural",
+      "bpm": 100,
+      "file": "/audio/funk-100.wav",
+      "labelColor": "#d0672e",
+      "source": "bundled",
+      "license": "CC0-1.0",
+      "sourceUrl": "procedural: scripts/make_loops.mjs"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+@import './styles/tokens.css';
+@import './styles/deck.css';
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--stage-bg);
+  color: var(--text-primary);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* PRD §9.2: no scroll on a 1440×900 viewport */
+}
+
+/* Decorative motion respects the user's preference; the platter itself is
+ * content (PRD §9.3) and keeps turning regardless — it opts back in explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
