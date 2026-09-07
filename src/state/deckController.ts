@@ -220,6 +220,8 @@ export function stopLoop(): void {
 
 function step(dt: number, nowSeconds: number): void {
   const { motorOn, rpm, pitchPercent } = useDeckStore.getState()
+  deckRuntime.motorOn = motorOn
+  deckRuntime.pitchPercent = pitchPercent
 
   // While a scratch pointer is down, re-evaluate angular velocity every frame
   // so a still finger on a spinning record actually holds it still.

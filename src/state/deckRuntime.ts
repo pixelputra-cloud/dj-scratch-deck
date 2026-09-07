@@ -21,6 +21,9 @@ export interface DeckRuntime {
   scratching: boolean
   /** true specifically while a *gesture* (not the mouse) holds the record */
   gestureScratching: boolean
+  /** mirror of the store's motorOn / pitchPercent, for the view frame loop */
+  motorOn: boolean
+  pitchPercent: number
   playing: boolean
 }
 
@@ -33,6 +36,8 @@ export const deckRuntime: DeckRuntime = {
   handVelocity: null,
   scratching: false,
   gestureScratching: false,
+  motorOn: false,
+  pitchPercent: 0,
   playing: false,
 }
 
@@ -44,5 +49,7 @@ export function resetDeckRuntime(): void {
   deckRuntime.handVelocity = null
   deckRuntime.scratching = false
   deckRuntime.gestureScratching = false
+  deckRuntime.motorOn = false
+  deckRuntime.pitchPercent = 0
   deckRuntime.playing = false
 }

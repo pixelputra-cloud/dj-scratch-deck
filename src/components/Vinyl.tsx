@@ -2,33 +2,19 @@ import { forwardRef, useMemo } from 'react'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
- * The record (PRD §5.2). SVG concentric groove strokes with pseudo-random
- * opacity for surface texture, and a proper centre label: cream paper stock,
- * a per-track accent rim, a printed bezel of ticks (which also reads the
- * rotation), and curved title / artist type. No spindle post.
+ * The record (PRD §5.2). Plain evenly-spaced concentric grooves, and a proper
+ * centre label: cream paper stock, a per-track accent rim, a printed bezel of
+ * ticks, curved title / artist type. No spindle post.
  *
  * The inner <g> is rotated by <Deck>'s frame loop via a direct
  * setAttribute('transform', 'rotate(deg 50 50)') — never a CSS animation.
  */
 
-function mulberry32(seed: number) {
-  return () => {
-    seed |= 0
-    seed = (seed + 0x6d2b79f5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-interface GrooveDef {
-  r: number
-  opacity: number
-  strong: boolean
-}
-
 const LABEL_R = 18
 const BEZEL_TICKS = 72
+const GROOVE_INNER = 19.5
+const GROOVE_OUTER = 48
+const GROOVE_STEP = 0.82
 
 export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
   const track = useDeckStore((s) => s.loadedTrack)
@@ -36,11 +22,13 @@ export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
   const title = (track?.title ?? 'NO DISC').toUpperCase().slice(0, 18)
   const artist = (track?.artist ?? 'load a track').slice(0, 22)
 
-  const grooves = useMemo<GrooveDef[]>(() => {
-    const rand = mulberry32(0x5eed)
-    const out: GrooveDef[] = []
-    for (let r = 19.5; r <= 48; r += 0.62 + rand() * 0.22) {
-      out.push({ r, opacity: 0.25 + rand() * 0.75, strong: rand() > 0.86 })
+  /** evenly-spaced concentric grooves; every 8th sits in a slightly wider
+   *  "band gap" so the surface reads like a record without any noise. */
+  const grooves = useMemo(() => {
+    const out: { r: number; band: boolean }[] = []
+    let i = 0
+    for (let r = GROOVE_INNER; r <= GROOVE_OUTER; r += GROOVE_STEP, i++) {
+      out.push({ r, band: i % 8 === 0 })
     }
     return out
   }, [])
@@ -72,21 +60,21 @@ export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
       </defs>
 
       <g ref={ref}>
-        {/* disc body + groove field */}
+        {/* disc body + plain concentric groove field */}
         <circle cx="50" cy="50" r="49" fill="url(#vinylBody)" className="tt-vinyl__body" />
-        <g fill="none" strokeLinecap="round">
+        <g fill="none">
           {grooves.map((g, i) => (
             <circle
               key={i}
               cx="50"
               cy="50"
               r={g.r}
-              stroke={g.strong ? 'var(--vinyl-groove-strong)' : 'var(--vinyl-groove)'}
-              strokeWidth={g.strong ? 0.35 : 0.2}
-              strokeOpacity={g.opacity}
+              stroke={g.band ? 'var(--vinyl-groove-strong)' : 'var(--vinyl-groove)'}
+              strokeWidth={g.band ? 0.28 : 0.16}
             />
           ))}
         </g>
+        {/* lead-in ring next to the label */}
         <circle cx="50" cy="50" r="18.7" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="0.7" />
 
         {/* ---- centre label ---- */}

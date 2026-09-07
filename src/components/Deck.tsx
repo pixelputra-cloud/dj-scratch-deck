@@ -21,7 +21,8 @@ export function Deck() {
 
   useEffect(() => {
     return onFrame((dt) => {
-      const { positionSamples, sampleRate, platter } = deckRuntime
+      const { positionSamples, sampleRate, platter, motorOn, pitchPercent } =
+        deckRuntime
 
       // Rotation from the audio playhead. SAMPLES_PER_REV is constant; because
       // position already advances at the pitched/rpm rate, a constant divisor
@@ -30,12 +31,16 @@ export function Deck() {
       const angle = (positionSamples / samplesPerRev) * 360
       vinylRef.current?.setAttribute('transform', `rotate(${angle} 50 50)`)
 
-      // Strobe: stationary when velocity == nominalRate (0% pitch, locked),
-      // drifts proportionally otherwise.
-      strobeAngle.current = mod(
-        strobeAngle.current + (platter.velocity - platter.nominalRate) * 360 * dt,
-        360,
-      )
+      // Strobe: like a real Technics — dead stationary at 0% pitch, crawling in
+      // proportion to the pitch offset, and only while the motor is actually
+      // driving the platter. It is driven off the pitch setting itself (not the
+      // measured velocity), so a spin-up transient or integrator residual never
+      // makes a "locked" strobe wander.
+      const spinning = motorOn && Math.abs(platter.velocity) > 0.04
+      if (spinning && Math.abs(pitchPercent) >= 0.4) {
+        const offset = platter.nominalRate * (pitchPercent / 100)
+        strobeAngle.current = mod(strobeAngle.current + offset * 360 * dt, 360)
+      }
       strobeRef.current?.setAttribute(
         'transform',
         `rotate(${strobeAngle.current} 50 50)`,
