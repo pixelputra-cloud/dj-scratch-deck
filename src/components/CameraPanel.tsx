@@ -1,27 +1,88 @@
+import { useRef } from 'react'
+import { useGestureTracking } from '../gesture/useGestureTracking'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
- * Camera feed + landmark overlay (PRD §6.5 / §6.6).
- *
- * Phase 3 shell: the turntable must never be blocked on the camera, so for
- * now this just shows the "gesture control off" state with a retry affordance.
- * MediaPipe wiring, the mirrored feed and the landmark skeleton land in Phase 3.
+ * Camera feed + landmark overlay (PRD §6.5 / §6.6). The turntable is never
+ * blocked on the camera — if it's denied or unavailable the deck stays fully
+ * mouse-operable and this panel just says so, with a retry.
  */
 export function CameraPanel() {
   const cameraState = useDeckStore((s) => s.cameraState)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { enable, disable } = useGestureTracking(videoRef, canvasRef)
+
+  const live = cameraState === 'on'
 
   return (
     <div className="tt-camera" data-state={cameraState}>
       <div className="tt-camera__frame">
-        <div className="tt-camera__placeholder">
-          <span className="tt-camera__dot" aria-hidden />
-          <p className="tt-camera__msg">gesture control off — camera not wired yet</p>
-          <p className="tt-camera__sub">Phase 3. Full mouse &amp; touch control is live now.</p>
-          <button type="button" disabled title="Available in Phase 3">
-            Enable camera
+        {/* video is always mounted so the ref exists before enable() */}
+        <video ref={videoRef} className="tt-camera__video" data-live={live} muted playsInline />
+        <canvas ref={canvasRef} className="tt-camera__overlay" data-live={live} />
+
+        {!live ? (
+          <div className="tt-camera__placeholder">
+            {cameraState === 'requesting' ? (
+              <>
+                <span className="tt-camera__dot" data-pulse aria-hidden />
+                <p className="tt-camera__msg">requesting camera…</p>
+              </>
+            ) : cameraState === 'denied' ? (
+              <>
+                <span className="tt-camera__dot" aria-hidden />
+                <p className="tt-camera__msg">camera permission denied</p>
+                <p className="tt-camera__sub">
+                  Allow camera access in your browser, then retry. The deck
+                  works fine without it.
+                </p>
+                <button type="button" onClick={enable}>
+                  Try again
+                </button>
+              </>
+            ) : cameraState === 'error' ? (
+              <>
+                <span className="tt-camera__dot" aria-hidden />
+                <p className="tt-camera__msg">gesture control off — camera not available</p>
+                <p className="tt-camera__sub">
+                  No camera, or the hand model failed to load. Mouse &amp; touch
+                  control is fully live.
+                </p>
+                <button type="button" onClick={enable}>
+                  Try again
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="tt-camera__dot" aria-hidden />
+                <p className="tt-camera__msg">gesture control is off</p>
+                <p className="tt-camera__sub">
+                  Play the record with your hands. Nothing is uploaded — the
+                  camera stays on your machine.
+                </p>
+                <button type="button" onClick={enable}>
+                  Enable camera
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="tt-camera__stop"
+            onClick={disable}
+            aria-label="Turn camera off"
+          >
+            ■ camera
           </button>
-        </div>
+        )}
       </div>
+      {live ? (
+        <p className="tt-camera__tip">
+          One hand on the record, one on the fader. Good, even light helps.
+        </p>
+      ) : null}
     </div>
   )
 }

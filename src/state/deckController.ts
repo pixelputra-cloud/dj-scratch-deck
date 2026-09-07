@@ -7,6 +7,12 @@
 import { platterRate, stepPlatter, type PlatterInput } from '../audio/platterPhysics'
 import { TurntableEngine } from '../audio/TurntableEngine'
 import { PLATTER_INNER_R } from '../lib/constants'
+import {
+  GestureMachine,
+  type GestureResult,
+  type HandSample,
+} from '../gesture/gestureMachine'
+import type { RawHand } from '../gesture/HandTracker'
 import { inAnnulus, ScratchTracker } from '../gesture/platterMapping'
 import type { Track } from '../tracks/types'
 import { deckRuntime, resetDeckRuntime } from './deckRuntime'
@@ -106,6 +112,77 @@ export function endScratch(): void {
   deckRuntime.scratching = false
   deckRuntime.handVelocity = null // physics eases back to motor speed
   tracker.end()
+}
+
+// ---- gesture control (Phase 3) --------------------------------------
+
+const machine = new GestureMachine()
+
+/** Feed one frame of raw (un-mirrored) MediaPipe hands. Mirrors x to match the
+ *  selfie preview, runs the state machine, applies its output to the deck, and
+ *  returns the result so the camera overlay can draw from the same data. */
+export function processGestureResult(
+  rawHands: RawHand[],
+  timestampMs: number,
+): GestureResult {
+  const samples: HandSample[] = rawHands.map((h) => ({
+    handedness: h.handedness,
+    landmarks: h.landmarks.map((p) => ({ x: 1 - p.x, y: p.y, z: p.z })),
+  }))
+
+  const { pitchPercent, pitchRange, setPitchPercent, toggleMotor, toggleRpm } =
+    useDeckStore.getState()
+
+  const out = machine.update(samples, timestampMs, {
+    platter: { cx: geometry.cx, cy: geometry.cy, radius: geometry.radius },
+    pitchPercent,
+    pitchRange,
+  })
+
+  // SCRATCH — a gesture holding the record. Releases cleanly (§6.3.8 handled
+  // inside the machine); when it lets go the physics eases back to motor speed.
+  if (out.scratchRate != null) {
+    deckRuntime.handVelocity = out.scratchRate
+    deckRuntime.scratching = true
+    deckRuntime.gestureScratching = true
+  } else if (deckRuntime.gestureScratching) {
+    deckRuntime.gestureScratching = false
+    deckRuntime.scratching = false
+    deckRuntime.handVelocity = null
+  }
+
+  if (out.pitchValue != null) setPitchPercent(out.pitchValue)
+  if (out.motorToggle) toggleMotor()
+  if (out.rpmToggle) toggleRpm()
+
+  useDeckStore.getState().setHands(
+    out.hands.map((h) => ({
+      handedness: h.handedness,
+      pose: h.pose,
+      owns: h.owns,
+      dwellProgress: h.dwellProgress,
+    })),
+  )
+  useDeckStore.getState().setActiveGestures({
+    scratch: out.scratchRate != null,
+    pinch: out.pitchValue != null,
+    dwell: out.activeDwell,
+  })
+
+  return out
+}
+
+/** Camera stopped / no permission — drop any gesture-held state. */
+export function resetGestureControl(): void {
+  machine.reset()
+  if (deckRuntime.gestureScratching) {
+    deckRuntime.gestureScratching = false
+    deckRuntime.scratching = false
+    deckRuntime.handVelocity = null
+  }
+  const s = useDeckStore.getState()
+  s.setHands([])
+  s.setActiveGestures({ scratch: false, pinch: false, dwell: null })
 }
 
 // ---- the one animation loop -------------------------------------

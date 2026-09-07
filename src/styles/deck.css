@@ -435,6 +435,7 @@
 /* ===================== camera + HUD ===================== */
 
 .tt-camera__frame {
+  position: relative;
   aspect-ratio: 4 / 3;
   border-radius: 12px;
   border: 1px solid var(--hud-border);
@@ -443,7 +444,29 @@
   place-items: center;
   overflow: hidden;
 }
+.tt-camera__video,
+.tt-camera__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1); /* selfie mirror */
+}
+.tt-camera__video {
+  object-fit: cover;
+  background: #000;
+}
+.tt-camera__video[data-live='false'],
+.tt-camera__overlay[data-live='false'] {
+  opacity: 0;
+}
+.tt-camera__overlay {
+  transform: none; /* landmarks are drawn already-mirrored */
+  pointer-events: none;
+}
 .tt-camera__placeholder {
+  position: relative;
+  z-index: 2;
   text-align: center;
   padding: 18px;
   color: var(--text-secondary);
@@ -456,6 +479,14 @@
   background: var(--text-faint);
   margin-bottom: 10px;
 }
+.tt-camera__dot[data-pulse] {
+  background: var(--backlight);
+  animation: tt-pulse 1s ease-in-out infinite;
+}
+@keyframes tt-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
 .tt-camera__msg {
   font-size: 12px;
   letter-spacing: 0.04em;
@@ -465,13 +496,34 @@
   font-size: 11px;
   color: var(--text-faint);
   margin: 0 0 12px;
+  line-height: 1.5;
 }
 .tt-camera__placeholder button {
   font-size: 11px;
   padding: 6px 12px;
   border-radius: 7px;
-  border: 1px solid var(--hud-border);
+  border: 1px solid var(--backlight);
   background: var(--control-face);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.tt-camera__stop {
+  position: absolute;
+  z-index: 3;
+  right: 8px;
+  bottom: 8px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--hud-border);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.tt-camera__tip {
+  margin: 8px 2px 0;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -504,6 +556,77 @@
 .tt-hud__none {
   color: var(--text-faint);
   margin: 0 0 12px;
+}
+.tt-hud__hands {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.tt-hud__hand {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: var(--control-face);
+  border: 1px solid transparent;
+  font-size: 11px;
+}
+.tt-hud__hand[data-owns='scratch'] {
+  border-color: var(--backlight);
+}
+.tt-hud__hand[data-owns='pitch'] {
+  border-color: #4a7ad0;
+}
+.tt-hud__hand[data-owns='dwell'] {
+  border-color: var(--dwell-ring);
+}
+.tt-hud__hand-name {
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+}
+.tt-hud__pose {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.tt-hud__owns {
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+.tt-hud__dwell {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--card-border);
+  overflow: hidden;
+}
+.tt-hud__dwell span {
+  display: block;
+  height: 100%;
+  background: var(--dwell-ring);
+}
+.tt-hud__active {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tt-hud__active span {
+  flex: 1;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 4px 0;
+  border-radius: 5px;
+  background: var(--control-face);
+  color: var(--text-faint);
+  border: 1px solid var(--card-border);
+}
+.tt-hud__active span[data-on='true'] {
+  color: var(--text-primary);
+  border-color: var(--backlight);
+  background: var(--backlight-dim);
 }
 .tt-hud__vocab {
   list-style: none;

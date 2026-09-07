@@ -19,6 +19,8 @@ export interface DeckRuntime {
   handVelocity: number | null
   /** true while any pointer/gesture is actively scratching */
   scratching: boolean
+  /** true specifically while a *gesture* (not the mouse) holds the record */
+  gestureScratching: boolean
   playing: boolean
 }
 
@@ -30,6 +32,7 @@ export const deckRuntime: DeckRuntime = {
   platter: initialPlatterState(),
   handVelocity: null,
   scratching: false,
+  gestureScratching: false,
   playing: false,
 }
 
@@ -40,5 +43,6 @@ export function resetDeckRuntime(): void {
   deckRuntime.platter = initialPlatterState()
   deckRuntime.handVelocity = null
   deckRuntime.scratching = false
+  deckRuntime.gestureScratching = false
   deckRuntime.playing = false
 }
