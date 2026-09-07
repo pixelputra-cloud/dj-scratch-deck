@@ -4,10 +4,10 @@ import { clamp } from '../lib/math'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
- * Pitch fader (PRD §5.6), horizontal + low-profile so it floats in the
- * bottom control cluster without a housing. Right = faster (+range).
- * The 0% detent is enforced in the store; here it just gets a visual click.
- * Drag with the mouse; the PINCH gesture sets the value directly.
+ * Vertical pitch fader (PRD §5.6), in the floating left control stack. Up =
+ * faster (+range), matching PINCH-PITCH. The 0% detent is enforced in the
+ * store; here it just gets a visual click. Drag with the mouse; the PINCH
+ * gesture sets the value directly.
  */
 export function PitchFader() {
   const pitch = useDeckStore((s) => s.pitchPercent)
@@ -32,14 +32,14 @@ export function PitchFader() {
   }, [pitch])
 
   const pointerToPitch = useCallback(
-    (clientX: number) => {
+    (clientY: number) => {
       const el = trackRef.current
       if (!el) return 0
       const r = el.getBoundingClientRect()
-      const pad = r.width * 0.06
-      const usable = r.width - pad * 2
-      const frac = clamp((clientX - r.left - pad) / usable, 0, 1) // 0 left .. 1 right
-      return (frac - 0.5) * 2 * range // left -> -range, right -> +range
+      const pad = r.height * 0.08 // matches the cap half-height
+      const usable = r.height - pad * 2
+      const frac = clamp((clientY - r.top - pad) / usable, 0, 1) // 0 top .. 1 bottom
+      return (0.5 - frac) * 2 * range // top -> +range, bottom -> -range
     },
     [range],
   )
@@ -48,11 +48,11 @@ export function PitchFader() {
     if (!powered) return
     dragging.current = true
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
-    setPitchPercent(pointerToPitch(e.clientX))
+    setPitchPercent(pointerToPitch(e.clientY))
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging.current) return
-    setPitchPercent(pointerToPitch(e.clientX))
+    setPitchPercent(pointerToPitch(e.clientY))
   }
   const endDrag = (e: React.PointerEvent) => {
     dragging.current = false
@@ -61,10 +61,10 @@ export function PitchFader() {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!powered) return
     const step = e.shiftKey ? 1 : 0.1
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
       e.preventDefault()
       setPitchPercent(pitch + step)
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
       e.preventDefault()
       setPitchPercent(pitch - step)
     } else if (e.key === 'Home' || e.key === '0') {
@@ -72,7 +72,7 @@ export function PitchFader() {
     }
   }
 
-  const frac = 0.5 + pitch / (2 * range)
+  const frac = 0.5 - pitch / (2 * range) // 0 = top (+range), 1 = bottom (−range)
   const inDetent = Math.abs(pitch) < PITCH_DETENT_WIDTH
   const readout = `${pitch >= 0 ? '+' : ''}${(pitch === 0 ? 0 : pitch).toFixed(1)}%`
 
@@ -88,6 +88,7 @@ export function PitchFader() {
         data-detent-flash={detentFlash}
         role="slider"
         tabIndex={powered ? 0 : -1}
+        aria-orientation="vertical"
         aria-valuemin={-range}
         aria-valuemax={range}
         aria-valuenow={Number(pitch.toFixed(1))}
@@ -100,12 +101,9 @@ export function PitchFader() {
         onPointerCancel={endDrag}
         onKeyDown={onKeyDown}
       >
+        <span className="tt-pitch__scale" aria-hidden />
         <span className="tt-pitch__zero" aria-hidden />
-        <span
-          className="tt-pitch__cap"
-          aria-hidden
-          style={{ left: `${frac * 100}%` }}
-        >
+        <span className="tt-pitch__cap" aria-hidden style={{ top: `${frac * 100}%` }}>
           <span className="tt-pitch__cap-line" />
         </span>
       </div>
