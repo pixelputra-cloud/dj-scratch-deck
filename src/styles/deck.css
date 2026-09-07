@@ -746,21 +746,25 @@
   --card-accent: var(--label-accent);
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  grid-template-rows: auto 22px;
-  gap: 3px 10px;
-  padding: 9px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
   text-align: left;
-  border-radius: 10px;
+  border-radius: 9px;
   border: 1px solid var(--card-border);
-  background: linear-gradient(180deg, var(--card-face-hi), var(--card-face));
+  background: var(--card-face);
   color: var(--text-primary);
-  cursor: pointer;
+  cursor: grab;
   position: relative;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 .tt-card:hover {
   transform: translateX(-3px);
+  background: var(--card-face-hi);
+}
+.tt-card:active {
+  cursor: grabbing;
 }
 .tt-card[data-loaded='true'] {
   transform: translateX(-6px);
@@ -768,72 +772,97 @@
   border-color: var(--card-accent);
 }
 .tt-card__sleeve {
-  grid-row: 1 / span 2;
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
   background: #0c0c0e;
   display: grid;
   place-items: center;
-  overflow: hidden;
 }
 .tt-card__disc {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, var(--card-accent) 0 18%, #111 19% 100%);
-  box-shadow: 0 0 0 1px #000;
-}
-.tt-card__meta {
-  min-width: 0;
-  display: grid;
-  gap: 1px;
-  align-content: start;
+  background: radial-gradient(circle at 42% 38%, var(--card-accent) 0 20%, #131313 22% 100%);
+  box-shadow: 0 0 0 1px #000, inset 0 0 0 4px rgba(0, 0, 0, 0.35);
 }
 .tt-card__title {
+  min-width: 0;
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.tt-card__artist {
-  font-size: 11px;
+.tt-card__sub {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 10px;
   color: var(--text-secondary);
-  white-space: nowrap;
+}
+.tt-card__sub > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.tt-card__tags {
-  display: flex;
-  gap: 6px;
-  font-size: 10px;
+.tt-card__bpm {
+  flex: 0 0 auto;
   color: var(--text-faint);
 }
 .tt-card__local {
+  flex: 0 0 auto;
   color: var(--card-accent);
   letter-spacing: 0.1em;
 }
-.tt-card__wave {
-  grid-column: 2;
-  width: 100%;
-  height: 22px;
-}
-.tt-card__loadbar {
+.tt-card__spin {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 6px;
-  height: 2px;
-  background: var(--card-border);
-  border-radius: 2px;
-  overflow: hidden;
+  right: 9px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--card-border);
+  border-top-color: var(--backlight);
+  animation: tt-spin 0.7s linear infinite;
 }
-.tt-card__loadbar span {
-  display: block;
-  height: 100%;
-  background: var(--backlight);
-  transition: width 0.15s linear;
+@keyframes tt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* drop-onto-disc target */
+.tt-platter__drop {
+  position: absolute;
+  inset: 8%;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px dashed var(--backlight);
+  background: radial-gradient(circle, rgba(255, 158, 61, 0.14), transparent 70%);
+  color: var(--text-primary);
+  font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 6px #000;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+.tt-platter[data-drop='true'] .tt-platter__drop {
+  opacity: 1;
+  transform: scale(1);
+}
+.tt-platter[data-drop='true'] .tt-platter__rim {
+  box-shadow:
+    0 0 0 2px var(--backlight),
+    0 0 30px var(--glow);
 }
 
 /* ===================== power gate ===================== */

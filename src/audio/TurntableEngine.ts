@@ -24,8 +24,6 @@ import {
   type ToWorkletMessage,
 } from './workletContract'
 
-const WAVEFORM_BUCKETS = 400
-
 export interface PositionReport {
   position: number
   length: number
@@ -145,8 +143,6 @@ export class TurntableEngine {
       transfer.push(copy.buffer)
     }
 
-    const waveformPeaks = computePeaks(channels, WAVEFORM_BUCKETS)
-
     if (!this.worklet) this.buildWorklet()
     const load: ToWorkletMessage = {
       type: 'load',
@@ -161,7 +157,6 @@ export class TurntableEngine {
       sampleRate: audio.sampleRate,
       channels, // buffers are detached post-transfer; kept for shape/length only
       durationSeconds: audio.duration,
-      waveformPeaks,
     }
     return { meta }
   }
@@ -282,28 +277,4 @@ export class TurntableEngine {
     this.analyser.disconnect()
     if (this.ctx.state !== 'closed') await this.ctx.close()
   }
-}
-
-/** Coarse min/max magnitude per bucket for the crate-card thumbnail. */
-export function computePeaks(
-  channels: Float32Array[],
-  buckets: number,
-): Float32Array {
-  const out = new Float32Array(buckets)
-  const len = channels[0]?.length ?? 0
-  if (len === 0) return out
-  const per = Math.max(1, Math.floor(len / buckets))
-  for (let b = 0; b < buckets; b++) {
-    const start = b * per
-    const end = Math.min(len, start + per)
-    let peak = 0
-    for (let i = start; i < end; i++) {
-      for (let c = 0; c < channels.length; c++) {
-        const v = Math.abs(channels[c][i])
-        if (v > peak) peak = v
-      }
-    }
-    out[b] = peak
-  }
-  return out
 }

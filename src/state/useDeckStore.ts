@@ -47,8 +47,6 @@ interface DeckState {
   loadProgress: number // 0..1, determinate where possible
   loadError: string | null
   crate: Track[]
-  /** trackId -> waveform peak samples for the crate-card thumbnail */
-  waveforms: Record<string, number[]>
 
   cameraState: CameraState
   /** last camera/model failure, surfaced in the panel for diagnosis */
@@ -70,7 +68,6 @@ interface DeckState {
 
   setCrate: (tracks: Track[]) => void
   addUserTracks: (tracks: Track[]) => void
-  setWaveform: (trackId: string, peaks: number[]) => void
   beginLoad: (trackId: string) => void
   setLoadProgress: (p: number) => void
   finishLoad: (track: Track) => void
@@ -100,7 +97,6 @@ export const useDeckStore = create<DeckState>((set, get) => ({
   loadProgress: 0,
   loadError: null,
   crate: [],
-  waveforms: {},
 
   cameraState: 'off',
   cameraError: null,
@@ -141,8 +137,6 @@ export const useDeckStore = create<DeckState>((set, get) => ({
 
   setCrate: (tracks) => set({ crate: tracks }),
   addUserTracks: (tracks) => set({ crate: [...get().crate, ...tracks] }),
-  setWaveform: (trackId, peaks) =>
-    set({ waveforms: { ...get().waveforms, [trackId]: peaks } }),
 
   beginLoad: (trackId) =>
     set({ loadingTrackId: trackId, loadProgress: 0, loadError: null }),

@@ -80,9 +80,6 @@ export async function loadTrackIntoDeck(track: Track): Promise<void> {
     deckRuntime.lengthSamples = meta.channels[0]?.length ?? 0
     deckRuntime.positionSamples = 0
     getEngine().seek(0)
-
-    // downsample peaks a little more for the card and stash as a plain array
-    store.setWaveform(track.id, Array.from(meta.waveformPeaks))
     store.finishLoad(track)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Could not decode this file.'

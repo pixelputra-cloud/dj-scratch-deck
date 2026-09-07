@@ -24,6 +24,4 @@ export interface DecodedTrack {
   /** One Float32Array per channel (1 = mono, 2 = stereo). */
   channels: Float32Array[]
   durationSeconds: number
-  /** Coarse min/max pairs for the crate-card waveform thumbnail. */
-  waveformPeaks: Float32Array
 }

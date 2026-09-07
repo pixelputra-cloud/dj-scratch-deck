@@ -1,12 +1,14 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import {
   beginScratch,
   endScratch,
   isInScratchAnnulus,
+  loadTrackIntoDeck,
   moveScratch,
   setPlatterGeometry,
 } from '../state/deckController'
 import { useDeckStore } from '../state/useDeckStore'
+import { isAudioFile, trackFromFile } from '../tracks/userTrack'
 import { StrobeRing } from './StrobeRing'
 import { Vinyl } from './Vinyl'
 
@@ -20,13 +22,17 @@ interface Props {
  * lighting and layering, never a rotateX. Owns:
  *   - geometry publishing (centre + radius in viewport px) for the scratch maths
  *   - pointer scratching over the annulus (mouse now, same maths as gestures)
+ *   - drop target: drag a crate card (or an audio file) onto the disc to load
  * Rotation itself is written by <Deck>'s frame loop into vinylRef.
  */
 export function Platter({ vinylRef, strobeRef }: Props) {
   const powered = useDeckStore((s) => s.powered)
   const cameraOn = useDeckStore((s) => s.cameraState === 'on')
+  const crate = useDeckStore((s) => s.crate)
+  const addUserTracks = useDeckStore((s) => s.addUserTracks)
   const scratchingRef = useRef(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const [dropActive, setDropActive] = useState(false)
 
   useEffect(() => {
     const measure = () => {
@@ -65,15 +71,50 @@ export function Platter({ vinylRef, strobeRef }: Props) {
     endScratch()
   }
 
+  const dragHasTrack = (e: React.DragEvent) =>
+    e.dataTransfer.types.includes('application/x-deck-track') ||
+    e.dataTransfer.types.includes('Files')
+
+  const onDragOver = (e: React.DragEvent) => {
+    if (!dragHasTrack(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!dropActive) setDropActive(true)
+  }
+  const onDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) setDropActive(false)
+  }
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDropActive(false)
+
+    const trackId = e.dataTransfer.getData('application/x-deck-track')
+    if (trackId) {
+      const t = crate.find((x) => x.id === trackId)
+      if (t) void loadTrackIntoDeck(t)
+      return
+    }
+    const audio = Array.from(e.dataTransfer.files).filter(isAudioFile)
+    if (audio.length) {
+      const tracks = audio.map(trackFromFile)
+      addUserTracks(tracks)
+      void loadTrackIntoDeck(tracks[0])
+    }
+  }
+
   return (
     <div
       ref={wrapRef}
       className="tt-platter"
       data-powered={powered}
+      data-drop={dropActive}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={stop}
       onPointerCancel={stop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <div className="tt-platter__metal" aria-hidden />
       <div className="tt-platter__rings" aria-hidden />
@@ -92,6 +133,10 @@ export function Platter({ vinylRef, strobeRef }: Props) {
           <line x1="50" y1="45" x2="50" y2="55" className="tt-platter__zone-cross" />
         </svg>
       ) : null}
+
+      <div className="tt-platter__drop" aria-hidden>
+        <span>drop to load</span>
+      </div>
     </div>
   )
 }
