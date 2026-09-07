@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react'
 import './index.css'
 import { CameraControl } from './components/CameraControl'
-import { Crate } from './components/Crate'
 import { Deck } from './components/Deck'
 import { GestureBackdrop } from './components/GestureBackdrop'
-import { GestureHUD } from './components/GestureHUD'
 import { PowerGate } from './components/PowerGate'
+import { SidePanel } from './components/SidePanel'
 import { useGestureTracking } from './gesture/useGestureTracking'
 import { setDeckLoop } from './state/deckController'
 import { useDeckStore } from './state/useDeckStore'
@@ -56,8 +55,7 @@ export default function App() {
         <Deck />
       </main>
 
-      <GestureHUD />
-      <Crate />
+      <SidePanel />
 
       <PowerGate />
     </div>

@@ -503,42 +503,87 @@
   pointer-events: none;
 }
 
-/* ===================== gesture HUD (fixed left) ===================== */
+/* ============ side panel: one right drawer, two tabs ============ */
 
-.tt-hud {
+.tt-panel {
   position: fixed;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   z-index: 20;
-  width: 260px;
-  max-height: min(72vh, 620px);
-  border-radius: 12px;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: stretch;
+}
+.tt-panel__handle {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 6px;
   border: 1px solid var(--hud-border);
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
   background: var(--hud-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.tt-hud[data-open='false'] {
-  width: auto;
-}
-.tt-hud__toggle {
-  text-align: left;
-  padding: 10px 12px;
-  font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.18em;
   color: var(--text-secondary);
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--hud-border);
   cursor: pointer;
 }
-.tt-hud__body {
+.tt-panel__handle-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font: 700 10px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.28em;
+}
+.tt-panel__handle-chev {
+  font-size: 10px;
+}
+.tt-panel__body {
+  width: 300px;
+  max-height: min(80vh, 680px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--hud-border);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--hud-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+.tt-panel[data-open='false'] .tt-panel__body {
+  display: none;
+}
+.tt-panel__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--hud-border);
+  flex: 0 0 auto;
+}
+.tt-panel__tabs button {
+  flex: 1;
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-faint);
+  font: 700 10px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tt-panel__tabs button[data-active='true'] {
+  color: var(--text-primary);
+  border-bottom-color: var(--backlight);
+}
+.tt-panel__content {
+  min-height: 0;
+  overflow-y: auto;
   padding: 12px;
-  overflow: auto;
+}
+
+/* ---- gesture info (Gestures tab) ---- */
+.tt-hud {
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -638,75 +683,36 @@
   font-size: 11px;
 }
 
-/* ===================== crate drawer (fixed right) ===================== */
+/* ---- crate (Crate tab) ---- */
 
 .tt-crate {
-  position: fixed;
-  z-index: 20;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: stretch;
-}
-.tt-crate__handle {
-  align-self: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 6px;
-  border: 1px solid var(--hud-border);
-  border-right: 0;
-  border-radius: 10px 0 0 10px;
-  background: var(--hud-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.tt-crate__handle-label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font: 700 11px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.28em;
-}
-.tt-crate__handle-chev {
-  font-size: 10px;
-}
-.tt-crate__panel {
-  width: 300px;
-  max-height: min(80vh, 680px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--hud-border);
-  border-right: 0;
-  border-radius: 12px 0 0 12px;
-  background: var(--hud-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  gap: 8px;
+  border-radius: 8px;
   transition: box-shadow 0.15s ease;
 }
-.tt-crate[data-open='false'] .tt-crate__panel {
-  display: none;
-}
-.tt-crate[data-dragover='true'] .tt-crate__panel {
+.tt-crate[data-dragover='true'] {
   box-shadow: 0 0 0 2px var(--backlight) inset;
 }
 .tt-crate__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
 }
-.tt-crate__head h2 {
+.tt-crate__hint {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.28em;
-  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-faint);
+}
+.tt-crate__hint[role='alert'] {
+  color: var(--label-accent);
 }
 .tt-crate__head button {
+  flex: 0 0 auto;
   font-size: 11px;
   padding: 5px 10px;
   border-radius: 7px;
@@ -715,24 +721,13 @@
   color: var(--text-primary);
   cursor: pointer;
 }
-.tt-crate__hint {
-  margin: 0;
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--text-faint);
-}
-.tt-crate__hint[role='alert'] {
-  color: var(--label-accent);
-}
 .tt-crate__list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  padding-right: 2px;
+  gap: 5px;
 }
 .tt-crate__now {
-  margin: 0;
+  margin: 2px 0 0;
   padding-top: 6px;
   border-top: 1px solid var(--hud-border);
   font-size: 11px;
@@ -746,12 +741,13 @@
   --card-accent: var(--label-accent);
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding: 7px 9px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 1px;
+  padding: 5px 8px;
   text-align: left;
-  border-radius: 9px;
+  border-radius: 8px;
   border: 1px solid var(--card-border);
   background: var(--card-face);
   color: var(--text-primary);
@@ -767,29 +763,32 @@
   cursor: grabbing;
 }
 .tt-card[data-loaded='true'] {
-  transform: translateX(-6px);
+  transform: translateX(-5px);
   box-shadow: -8px 0 24px -10px var(--card-loaded-glow);
   border-color: var(--card-accent);
 }
 .tt-card__sleeve {
-  width: 34px;
-  height: 34px;
-  border-radius: 5px;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   background: #0c0c0e;
   display: grid;
   place-items: center;
 }
 .tt-card__disc {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: radial-gradient(circle at 42% 38%, var(--card-accent) 0 20%, #131313 22% 100%);
-  box-shadow: 0 0 0 1px #000, inset 0 0 0 4px rgba(0, 0, 0, 0.35);
+  background: radial-gradient(circle at 42% 38%, var(--card-accent) 0 22%, #131313 24% 100%);
+  box-shadow: 0 0 0 1px #000, inset 0 0 0 3.5px rgba(0, 0, 0, 0.4);
 }
 .tt-card__title {
   min-width: 0;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -797,10 +796,11 @@
 .tt-card__sub {
   grid-column: 2;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
-  font-size: 10px;
+  font-size: 9.5px;
+  line-height: 1.2;
   color: var(--text-secondary);
 }
 .tt-card__sub > span:first-child {
@@ -815,15 +815,15 @@
 .tt-card__local {
   flex: 0 0 auto;
   color: var(--card-accent);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 }
 .tt-card__spin {
   position: absolute;
-  right: 9px;
+  right: 8px;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  margin-top: -6px;
+  width: 11px;
+  height: 11px;
+  margin-top: -5.5px;
   border-radius: 50%;
   border: 2px solid var(--card-border);
   border-top-color: var(--backlight);
@@ -943,23 +943,14 @@
 
 /* ===================== responsive fallback ===================== */
 
-/* below this the HUD would collide with the disc — dock it low-left, clear of
-   the floating control cluster. Collapsed, the user can still open it. */
-@media (max-width: 1100px) {
-  .tt-hud {
-    top: auto;
-    bottom: 84px;
-    transform: none;
-    max-height: 40vh;
+@media (max-width: 820px) {
+  .tt-panel__body {
+    width: min(80vw, 300px);
+    max-height: 70vh;
   }
 }
-@media (max-width: 820px) {
-  .tt-hud {
-    left: 8px;
-    right: 8px;
-    width: auto;
-  }
-  .tt-crate__panel {
-    width: min(74vw, 300px);
+@media (max-height: 620px) {
+  .tt-panel__body {
+    max-height: 82vh;
   }
 }
