@@ -181,8 +181,7 @@
   pointer-events: none;
 }
 .tt-platter .tt-vinyl,
-.tt-platter .tt-strobe,
-.tt-platter .tt-spindle {
+.tt-platter .tt-strobe {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -194,20 +193,21 @@
   inset: 6% !important;
   width: 88% !important;
   height: 88% !important;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55));
 }
 .tt-vinyl__title {
-  font-size: 4.1px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 3.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
 }
 .tt-vinyl__artist {
-  font-size: 3px;
-  opacity: 0.8;
+  font-size: 2.7px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 .tt-vinyl__bpm {
-  font-size: 2.5px;
-  opacity: 0.65;
+  font-size: 2.9px;
+  font-weight: 800;
 }
 .tt-platter__sheen {
   position: absolute;
@@ -244,19 +244,24 @@
   z-index: 4;
   pointer-events: none;
   overflow: visible;
+  filter: drop-shadow(0 0 3px var(--glow));
 }
 .tt-platter__zone circle {
   fill: none;
   stroke: var(--zone-line);
-  stroke-width: 0.5;
-  stroke-dasharray: 2 2;
+  stroke-width: 1;
+  stroke-dasharray: 3.4 2.6;
+  stroke-linecap: round;
+}
+.tt-platter__zone-outer {
+  stroke-width: 1.2;
 }
 .tt-platter__zone-inner {
-  stroke-width: 0.7;
+  stroke-width: 1.4;
 }
 .tt-platter__zone-cross {
   stroke: var(--zone-line);
-  stroke-width: 0.7;
+  stroke-width: 1.2;
   stroke-linecap: round;
 }
 

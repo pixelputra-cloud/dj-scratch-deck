@@ -7,7 +7,6 @@ import {
   setPlatterGeometry,
 } from '../state/deckController'
 import { useDeckStore } from '../state/useDeckStore'
-import { Spindle } from './Spindle'
 import { StrobeRing } from './StrobeRing'
 import { Vinyl } from './Vinyl'
 
@@ -82,16 +81,15 @@ export function Platter({ vinylRef, strobeRef }: Props) {
       <Vinyl ref={vinylRef} />
       <div className="tt-platter__sheen" aria-hidden />
       <div className="tt-platter__rim" aria-hidden />
-      <Spindle />
 
       {/* scratch hit-region guide — the camera frame maps straight onto this
           disc, so these dashed rings show exactly where a fingertip catches. */}
       {cameraOn ? (
         <svg className="tt-platter__zone" viewBox="0 0 100 100" aria-hidden>
-          <circle cx="50" cy="50" r="49" className="tt-platter__zone-outer" />
+          <circle cx="50" cy="50" r="48.5" className="tt-platter__zone-outer" />
           <circle cx="50" cy="50" r="9" className="tt-platter__zone-inner" />
-          <line x1="46" y1="50" x2="54" y2="50" className="tt-platter__zone-cross" />
-          <line x1="50" y1="46" x2="50" y2="54" className="tt-platter__zone-cross" />
+          <line x1="45" y1="50" x2="55" y2="50" className="tt-platter__zone-cross" />
+          <line x1="50" y1="45" x2="50" y2="55" className="tt-platter__zone-cross" />
         </svg>
       ) : null}
     </div>

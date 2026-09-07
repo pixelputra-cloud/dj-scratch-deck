@@ -31,7 +31,7 @@
   --plinth-blur: 12px;
   --platter-glass: 0.5; /* metal disc opacity in glass mode */
   --vinyl-glass: 0.66; /* vinyl body opacity in glass mode */
-  --zone-line: rgba(255, 202, 138, 0.7);
+  --zone-line: rgba(255, 178, 92, 0.92);
 
   /* ---- platter (metal disc under the vinyl) -------------------------- */
   --platter-metal-a: #3a3b3f;
