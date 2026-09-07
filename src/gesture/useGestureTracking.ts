@@ -29,6 +29,8 @@ export function useGestureTracking(
 ) {
   const trackerRef = useRef<HandTracker | null>(null)
   const setCameraState = useDeckStore((s) => s.setCameraState)
+  const setCameraError = useDeckStore((s) => s.setCameraError)
+  const sawResult = useRef(false)
 
   const draw = useCallback(
     (raw: RawHand[]) => {
@@ -118,9 +120,15 @@ export function useGestureTracking(
     if (trackerRef.current) return
     const video = videoRef.current
     if (!video) return
+    sawResult.current = false
     const tracker = new HandTracker(video, {
       onState: setCameraState,
+      onError: setCameraError,
       onResult: (hands, ts) => {
+        if (!sawResult.current) {
+          sawResult.current = true
+          console.info('[gesture] first landmark frame received')
+        }
         const result = processGestureResult(hands, ts)
         draw(hands)
         drawDwell(result.hands)
@@ -128,7 +136,7 @@ export function useGestureTracking(
     })
     trackerRef.current = tracker
     void tracker.start()
-  }, [videoRef, setCameraState, draw, drawDwell])
+  }, [videoRef, setCameraState, setCameraError, draw, drawDwell])
 
   const disable = useCallback(() => {
     trackerRef.current?.stop()

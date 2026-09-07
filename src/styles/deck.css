@@ -507,6 +507,16 @@
   color: var(--text-primary);
   cursor: pointer;
 }
+.tt-camera__diag {
+  margin: 0 0 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--label-accent);
+  max-height: 5.6em;
+  overflow: auto;
+  word-break: break-word;
+}
 .tt-camera__stop {
   position: absolute;
   z-index: 3;

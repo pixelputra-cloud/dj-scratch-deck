@@ -51,6 +51,8 @@ interface DeckState {
   waveforms: Record<string, number[]>
 
   cameraState: CameraState
+  /** last camera/model failure, surfaced in the panel for diagnosis */
+  cameraError: string | null
   hands: HandState[]
   activeGestures: ActiveGestures
 
@@ -75,6 +77,7 @@ interface DeckState {
   failLoad: (message: string) => void
 
   setCameraState: (s: CameraState) => void
+  setCameraError: (msg: string | null) => void
   setHands: (h: HandState[]) => void
   setActiveGestures: (g: Partial<ActiveGestures>) => void
 }
@@ -100,6 +103,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
   waveforms: {},
 
   cameraState: 'off',
+  cameraError: null,
   hands: [],
   activeGestures: { scratch: false, pinch: false, dwell: null },
 
@@ -154,6 +158,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
     set({ loadingTrackId: null, loadProgress: 0, loadError: message }),
 
   setCameraState: (s) => set({ cameraState: s }),
+  setCameraError: (msg) => set({ cameraError: msg }),
   setHands: (h) => set({ hands: h }),
   setActiveGestures: (g) =>
     set({ activeGestures: { ...get().activeGestures, ...g } }),

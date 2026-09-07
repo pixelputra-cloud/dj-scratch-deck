@@ -9,6 +9,7 @@ import { useDeckStore } from '../state/useDeckStore'
  */
 export function CameraPanel() {
   const cameraState = useDeckStore((s) => s.cameraState)
+  const cameraError = useDeckStore((s) => s.cameraError)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { enable, disable } = useGestureTracking(videoRef, canvasRef)
@@ -37,6 +38,11 @@ export function CameraPanel() {
                   Allow camera access in your browser, then retry. The deck
                   works fine without it.
                 </p>
+                {cameraError ? (
+                  <p className="tt-camera__diag" title={cameraError}>
+                    {cameraError}
+                  </p>
+                ) : null}
                 <button type="button" onClick={enable}>
                   Try again
                 </button>
@@ -49,6 +55,11 @@ export function CameraPanel() {
                   No camera, or the hand model failed to load. Mouse &amp; touch
                   control is fully live.
                 </p>
+                {cameraError ? (
+                  <p className="tt-camera__diag" title={cameraError}>
+                    {cameraError}
+                  </p>
+                ) : null}
                 <button type="button" onClick={enable}>
                   Try again
                 </button>
