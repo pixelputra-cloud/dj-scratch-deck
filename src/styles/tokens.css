@@ -61,6 +61,23 @@
   --backlight-dim: rgba(255, 158, 61, 0.22);
   --glow: rgba(255, 158, 61, 0.55);
 
+  /* ---- analog control surfaces (transport stack) ----------------- */
+  --analog-cap: radial-gradient(
+    132% 108% at 30% 22%,
+    #fdf9ef 0%,
+    #ede2ca 52%,
+    #dacda9 100%
+  );
+  --analog-cap-solid: #ece1c9; /* for box-shadow frames (no gradients allowed) */
+  --analog-frame: #191a1c;
+  --analog-ink: #3b3323; /* engraved label */
+  --analog-shade: rgba(120, 96, 52, 0.28); /* moulded-plastic bottom shade */
+  --analog-led: #ff6a2b; /* orange status lamp */
+  --analog-led-off: #6f5c3e;
+  --analog-led-glow: rgba(255, 106, 43, 0.75);
+  --analog-lcd-bg: #0c100d;
+  --analog-lcd-ink: #ff8a3d;
+
   /* ---- pitch fader --------------------------------------------- */
   --fader-track: #141517;
   --fader-track-lit: rgba(255, 158, 61, 0.35);

@@ -38,14 +38,14 @@ export function Deck() {
 
   return (
     <div className="tt-deck">
-      <Platter vinylRef={vinylRef} strobeRef={strobeRef} />
-
-      {/* one floating control bar — no chassis */}
+      {/* analog transport stack — sits immediately left of the disc */}
       <div className="tt-deck__controls">
         <SpeedSelector />
         <StartButton />
         <PitchFader />
       </div>
+
+      <Platter vinylRef={vinylRef} strobeRef={strobeRef} />
     </div>
   )
 }

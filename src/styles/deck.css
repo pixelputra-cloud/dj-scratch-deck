@@ -120,21 +120,23 @@
 
 /* ===================== deck (no chassis) ===================== */
 
-/* the disc owns the stage; the control stack floats to its left */
+/* the disc stays dead-centre; the transport stack is glued to its left edge
+   (positioned off the disc radius, not the screen edge) so it's always within
+   easy reach — by hand or by gesture */
 .tt-deck {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  /* left gutter reserved for the floating control stack */
-  padding: 44px 12px 12px 148px;
+  padding: 40px 16px 16px;
 }
 
 /* ===================== platter ===================== */
 
 .tt-platter {
   position: relative;
-  width: min(84vh, 62vw, 660px);
+  flex: 0 0 auto;
+  width: min(80vh, 53vw, 620px);
   aspect-ratio: 1;
   border-radius: 50%;
   touch-action: none;
@@ -292,247 +294,269 @@
   stroke-linecap: round;
 }
 
-/* ====== floating control stack — left of the disc, skeuomorphic ====== */
+/* ====== analog transport stack — cream ABS, orange lamps ====== */
 
 .tt-deck__controls {
   position: absolute;
-  left: clamp(14px, 3.5vw, 44px);
   top: 50%;
+  /* Right edge parked just outside the disc (half the platter width + a gap),
+     but never so far left that the stack leaves the viewport — the min() floors
+     it 6px from the left edge on narrow screens. */
+  right: min(
+    calc(50% + min(40vh, 26.5vw, 310px) + clamp(10px, 1.6vw, 30px)),
+    calc(100% - 154px)
+  );
   transform: translateY(-50%);
   z-index: 6;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 22px;
+  align-items: flex-end;
+  gap: 18px;
 }
 
-/* --- shared skeuo surfaces --- */
-:root {
-  --skeu-btn: linear-gradient(180deg, #43464c 0%, #34373c 42%, #23252a 52%, #2c2f34 100%);
-  --skeu-btn-on: linear-gradient(180deg, #4d5057 0%, #3c3f45 42%, #2b2e33 52%, #35383e 100%);
-  --skeu-ink: #c6c9cf;
-  --skeu-engrave: 0 -1px 0 rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.06);
-  --skeu-raise:
-    0 1px 0 rgba(255, 255, 255, 0.10) inset,
-    0 -3px 5px rgba(0, 0, 0, 0.5) inset,
-    0 6px 12px -2px rgba(0, 0, 0, 0.6),
-    0 2px 0 #0b0c0e;
-  --skeu-press:
-    0 2px 5px rgba(0, 0, 0, 0.6) inset,
-    0 1px 3px -1px rgba(0, 0, 0, 0.4),
-    0 1px 0 #0b0c0e;
-}
-
-/* --- start / stop — chunky round button --- */
+/* --- start / stop — big domed push button --- */
 .tt-start {
   position: relative;
   display: grid;
   place-items: center;
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: conic-gradient(
-    from 130deg at 50% 50%,
-    #3d4045,
-    #191a1d 25%,
-    #35383c 50%,
-    #191a1d 75%,
-    #3d4045
-  );
-  box-shadow:
-    0 12px 22px -6px rgba(0, 0, 0, 0.7),
-    0 0 0 1px #08090b,
-    inset 0 2px 3px rgba(255, 255, 255, 0.12),
-    inset 0 -4px 9px rgba(0, 0, 0, 0.6);
+  background: var(--analog-cap);
+  color: var(--analog-ink);
+  font: 800 13px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.12em;
   cursor: pointer;
-}
-.tt-start::before {
-  content: '';
-  position: absolute;
-  inset: 11px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 32%, #4e5157, #2b2d32 52%, #191a1d 100%);
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.14),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.55),
-    0 4px 8px rgba(0, 0, 0, 0.45);
-  transition: transform 90ms ease, box-shadow 120ms ease;
-}
-.tt-start:not(:disabled):active::before {
-  transform: translateY(1.5px);
-  box-shadow:
-    inset 0 5px 11px rgba(0, 0, 0, 0.6),
-    inset 0 -2px 4px rgba(255, 255, 255, 0.05);
+    0 0 0 4px var(--analog-frame),
+    0 0 0 7px #0a0b0c,
+    0 18px 32px -10px rgba(0, 0, 0, 0.75),
+    inset 0 4px 6px rgba(255, 255, 255, 0.95),
+    inset 0 -14px 22px var(--analog-shade);
+  transition: transform 90ms ease, box-shadow 130ms ease, filter 150ms ease;
 }
 .tt-start__ring {
   position: absolute;
-  inset: 7px;
+  inset: 8px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 158, 61, 0.10);
+  border: 2px solid transparent;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
+.tt-start[data-on='true'] {
+  filter: brightness(1.03) saturate(1.12);
+}
 .tt-start[data-on='true'] .tt-start__ring {
-  border-color: var(--backlight);
-  box-shadow: 0 0 18px var(--glow), inset 0 0 8px var(--glow);
+  border-color: var(--analog-led);
+  box-shadow:
+    0 0 18px var(--analog-led-glow),
+    inset 0 0 12px rgba(255, 106, 43, 0.32);
 }
 .tt-start__label {
   position: relative;
   z-index: 2;
-  font: 800 10px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.14em;
-  color: #c3c6cc;
-  text-shadow: 0 -1px 0 #000, 0 1px 0 rgba(255, 255, 255, 0.05);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
 }
-.tt-start[data-on='true'] .tt-start__label {
-  color: #fff;
+.tt-start:not(:disabled):active {
+  transform: translateY(2px) scale(0.985);
+  box-shadow:
+    0 0 0 4px var(--analog-frame),
+    0 0 0 7px #0a0b0c,
+    0 6px 12px -6px rgba(0, 0, 0, 0.6),
+    inset 0 7px 16px var(--analog-shade),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.35);
 }
 .tt-start:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* --- 33 / 45 — two lit buttons with LEDs --- */
+/* --- 33 / 45 — square caps with orange lamps --- */
 .tt-speed {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 .tt-speed__btn {
   position: relative;
-  width: 44px;
-  height: 34px;
+  width: 54px;
+  height: 54px;
   border: 0;
-  border-radius: 9px;
-  background: var(--skeu-btn);
-  box-shadow: var(--skeu-raise);
-  color: var(--skeu-ink);
-  font: 800 12px/1 ui-sans-serif, system-ui, sans-serif;
-  text-shadow: var(--skeu-engrave);
+  border-radius: 15px;
+  background: var(--analog-cap);
+  color: var(--analog-ink);
+  font: 800 15px/1 ui-sans-serif, system-ui, sans-serif;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
   cursor: pointer;
-  transition: transform 80ms ease, box-shadow 120ms ease;
+  box-shadow:
+    0 0 0 3px var(--analog-frame),
+    0 10px 18px -6px rgba(0, 0, 0, 0.7),
+    inset 0 3px 4px rgba(255, 255, 255, 0.95),
+    inset 0 -9px 14px var(--analog-shade);
+  transition: transform 80ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 .tt-speed__btn::after {
   content: '';
   position: absolute;
-  top: 4px;
+  top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #15171a;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+  background: var(--analog-led-off);
+  box-shadow:
+    inset 0 1px 1.5px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .tt-speed__btn[data-on='true'] {
-  background: var(--skeu-btn-on);
-  color: #fff;
+  filter: brightness(1.04);
 }
 .tt-speed__btn[data-on='true']::after {
-  background: var(--backlight);
-  box-shadow: 0 0 7px var(--glow), 0 0 2px #fff;
+  background: var(--analog-led);
+  box-shadow: 0 0 9px var(--analog-led-glow), 0 0 3px #fff, inset 0 0 1px #fff;
 }
 .tt-speed__btn:not(:disabled):active {
-  transform: translateY(2px);
-  box-shadow: var(--skeu-press);
+  transform: translateY(1.5px);
+  box-shadow:
+    0 0 0 3px var(--analog-frame),
+    0 3px 7px -3px rgba(0, 0, 0, 0.55),
+    inset 0 4px 9px var(--analog-shade),
+    inset 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 .tt-speed__btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 .tt-speed__frac {
-  font-size: 8px;
+  font-size: 9px;
   vertical-align: super;
 }
 
-/* --- pitch: LCD readout + vertical knurled fader + range toggle --- */
+/* --- pitch: LCD window + horizontal fader + range cap --- */
 .tt-pitch {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+.tt-pitch__head {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 .tt-pitch__readout {
-  min-width: 58px;
-  text-align: center;
-  padding: 3px 6px;
-  border-radius: 4px;
-  font: 800 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
-  color: #ff9e3d;
-  background: #0c0f0d;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font: 800 12px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.03em;
+  color: var(--analog-lcd-ink);
+  background: var(--analog-lcd-bg);
+  text-shadow: 0 0 6px rgba(255, 138, 61, 0.6);
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.85),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 1px 0 rgba(255, 255, 255, 0.05);
-  text-shadow: 0 0 5px rgba(255, 158, 61, 0.55);
+    0 0 0 3px var(--analog-cap-solid),
+    0 3px 6px -2px rgba(0, 0, 0, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.9);
 }
 .tt-pitch__readout[data-detent='true'] {
-  color: #ffd08a;
+  color: #ffd9ac;
+  text-shadow: 0 0 8px rgba(255, 138, 61, 0.85);
 }
 .tt-pitch__track {
   position: relative;
-  width: 46px;
-  height: 152px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #3c3f44, #2a2c31 50%, #33363b);
+  width: 148px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--analog-cap);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 6px 12px -3px rgba(0, 0, 0, 0.6),
-    0 2px 0 #0a0b0d;
+    0 0 0 3px var(--analog-frame),
+    0 9px 16px -5px rgba(0, 0, 0, 0.65),
+    inset 0 2px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -6px 10px var(--analog-shade);
   touch-action: none;
-  cursor: ns-resize;
+  cursor: ew-resize;
 }
 .tt-pitch__track::before {
   /* the recessed slot the cap rides in */
   content: '';
   position: absolute;
-  left: 50%;
-  top: 10px;
-  bottom: 10px;
-  width: 8px;
-  transform: translateX(-50%);
+  left: 15px;
+  right: 15px;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
   border-radius: 5px;
-  background: linear-gradient(90deg, #0a0b0d, #17181b 50%, #0a0b0d);
+  background: linear-gradient(180deg, #0a0b0d, #191a1c 55%, #0a0b0d);
   box-shadow:
-    inset 0 0 4px rgba(0, 0, 0, 0.9),
-    inset 1px 0 1px rgba(255, 255, 255, 0.04);
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.9),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06);
 }
 .tt-pitch__scale {
-  /* etched pitch graduations down both sides of the slot */
+  /* etched graduations along the slot */
   position: absolute;
-  inset: 12px 7px;
-  background:
-    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0 1px, transparent 1px 11px),
-    repeating-linear-gradient(180deg, transparent 1px, rgba(255, 255, 255, 0.05) 1px 2px, transparent 2px 12px);
+  left: 15px;
+  right: 15px;
+  top: 50%;
+  height: 15px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(60, 45, 20, 0.42) 0 1px,
+    transparent 1px 13px
+  );
   pointer-events: none;
 }
 .tt-pitch__zero {
+  /* strong centre detent notch */
   position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
-  background: var(--fader-detent);
-  box-shadow: 0 0 6px var(--fader-detent);
+  left: 50%;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--analog-led);
+  box-shadow: 0 0 6px var(--analog-led-glow);
 }
 .tt-pitch__track[data-detent-flash='true'] .tt-pitch__zero {
-  box-shadow: 0 0 14px 3px var(--backlight);
+  box-shadow: 0 0 14px 3px var(--analog-led);
+}
+.tt-pitch__end {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 800 13px/1 ui-sans-serif, system-ui, sans-serif;
+  color: var(--analog-ink);
+  opacity: 0.65;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+.tt-pitch__end[data-side='minus'] {
+  left: 5px;
+}
+.tt-pitch__end[data-side='plus'] {
+  right: 5px;
 }
 .tt-pitch__cap {
   position: absolute;
-  left: 50%;
-  width: 34px;
-  height: 18px;
+  top: 50%;
+  width: 26px;
+  height: 38px;
   transform: translate(-50%, -50%);
-  border-radius: 4px;
+  border-radius: 6px;
   background:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0 1px, rgba(0, 0, 0, 0.28) 1px 3px),
-    linear-gradient(180deg, #5a5d63, #2c2e33 48%, #212226 52%, #3d3f44);
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.5) 0 1px,
+      rgba(120, 96, 52, 0.24) 1px 3px
+    ),
+    var(--analog-cap);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.18) inset,
-    0 -2px 3px rgba(0, 0, 0, 0.5) inset,
-    0 4px 8px rgba(0, 0, 0, 0.6);
+    0 0 0 1.5px var(--analog-frame),
+    0 6px 11px -2px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -4px 7px var(--analog-shade);
   cursor: grab;
 }
 .tt-pitch__track:active .tt-pitch__cap {
@@ -540,34 +564,43 @@
 }
 .tt-pitch__cap-line {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
-  background: var(--backlight);
-  box-shadow: 0 0 6px var(--glow);
+  left: 50%;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--analog-led);
+  box-shadow: 0 0 6px var(--analog-led-glow);
 }
 .tt-pitch__track[aria-disabled='true'] {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 .tt-pitch__range {
+  flex: 0 0 auto;
+  min-width: 42px;
   border: 0;
-  border-radius: 7px;
-  padding: 5px 9px;
-  font: 800 9px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.08em;
-  color: var(--skeu-ink);
-  background: var(--skeu-btn);
-  box-shadow: var(--skeu-raise);
-  text-shadow: var(--skeu-engrave);
+  border-radius: 9px;
+  padding: 8px 8px;
+  font: 800 10px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  color: var(--analog-ink);
+  background: var(--analog-cap);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   cursor: pointer;
+  box-shadow:
+    0 0 0 3px var(--analog-frame),
+    0 8px 14px -4px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -6px 10px var(--analog-shade);
   transition: transform 80ms ease, box-shadow 120ms ease;
 }
 .tt-pitch__range:active {
-  transform: translateY(2px);
-  box-shadow: var(--skeu-press);
+  transform: translateY(1.5px);
+  box-shadow:
+    0 0 0 3px var(--analog-frame),
+    0 3px 6px -3px rgba(0, 0, 0, 0.5),
+    inset 0 4px 9px var(--analog-shade);
 }
 
 /* ===================== camera control (header) ===================== */
