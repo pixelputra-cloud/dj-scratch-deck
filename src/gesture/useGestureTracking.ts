@@ -17,6 +17,12 @@ const CONNECTIONS: [number, number][] = [
   [0, 17],
 ]
 
+/* electric cyan — high contrast against the amber deck + warm camera feed */
+const BONE = 'rgba(60, 232, 250, 0.8)'
+const JOINT = '#3ce8fa'
+const GLOW = 'rgba(60, 232, 250, 0.9)'
+const DWELL = '#9af3ff'
+
 /**
  * `object-fit: cover` projection: the full-page <video> is mirrored and cover-
  * fitted to the viewport, so a normalised camera point maps to viewport px
@@ -82,19 +88,22 @@ export function useGestureTracking(
       ctx.save()
       ctx.scale(dpr, dpr)
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.shadowColor = GLOW
+      ctx.shadowBlur = 6
 
       for (const hand of raw) {
         const pts = hand.landmarks.map((p) => project({ x: 1 - p.x, y: p.y }))
-        ctx.strokeStyle = 'rgba(255,158,61,0.55)'
+        ctx.strokeStyle = BONE
         ctx.lineWidth = 3
-        ctx.lineCap = 'round'
         for (const [a, b] of CONNECTIONS) {
           ctx.beginPath()
           ctx.moveTo(pts[a].x, pts[a].y)
           ctx.lineTo(pts[b].x, pts[b].y)
           ctx.stroke()
         }
-        ctx.fillStyle = '#ff9e3d'
+        ctx.fillStyle = JOINT
         for (const p of pts) {
           ctx.beginPath()
           ctx.arc(p.x, p.y, 4, 0, Math.PI * 2)
@@ -107,9 +116,8 @@ export function useGestureTracking(
         const c = project(d.centroid) // centroid is already mirrored
         ctx.beginPath()
         ctx.arc(c.x, c.y, 30, -Math.PI / 2, -Math.PI / 2 + d.dwellProgress * Math.PI * 2)
-        ctx.strokeStyle = '#ffd08a'
+        ctx.strokeStyle = DWELL
         ctx.lineWidth = 5
-        ctx.lineCap = 'round'
         ctx.stroke()
       }
       ctx.restore()

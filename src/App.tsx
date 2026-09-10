@@ -27,7 +27,7 @@ export default function App() {
 
   return (
     <div className="tt-app" data-camera={cameraState}>
-      <GestureBackdrop videoRef={videoRef} canvasRef={canvasRef} />
+      <GestureBackdrop videoRef={videoRef} />
 
       <header className="tt-app__header">
         <div className="tt-app__brand">
@@ -54,6 +54,9 @@ export default function App() {
       <main className="tt-app__stage">
         <Deck />
       </main>
+
+      {/* landmark overlay — sits ABOVE the deck so hands read on top of the disc */}
+      <canvas ref={canvasRef} className="tt-gesture-overlay" aria-hidden />
 
       <SidePanel />
 

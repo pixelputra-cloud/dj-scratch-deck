@@ -88,9 +88,10 @@
   /* ---- HUD / camera ---------------------------------------- */
   --hud-bg: rgba(14, 15, 18, 0.92);
   --hud-border: #2c2e33;
-  --landmark: #ff9e3d;
-  --landmark-bone: rgba(255, 158, 61, 0.5);
-  --dwell-ring: #ffd08a;
+  /* electric cyan — the hand overlay is deliberately NOT the deck's amber */
+  --landmark: #3ce8fa;
+  --landmark-bone: rgba(60, 232, 250, 0.55);
+  --dwell-ring: #9af3ff;
 
   /* ---- geometry / timing (non-colour tokens) -------------- */
   --radius-plinth: 22px;

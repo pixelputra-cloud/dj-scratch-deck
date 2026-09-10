@@ -46,9 +46,13 @@
 .tt-backdrop[data-live='true'] .tt-backdrop__scrim {
   opacity: 1;
 }
-.tt-backdrop__overlay {
-  position: absolute;
+
+/* hand-landmark overlay — layered ABOVE the deck (camera feed -> platter +
+   markings -> hand mapping) so the tracked hands read on top of the disc */
+.tt-gesture-overlay {
+  position: fixed;
   inset: 0;
+  z-index: 8;
   width: 100%;
   height: 100%;
   pointer-events: none;
