@@ -2,6 +2,16 @@
 @import './styles/tokens.css';
 @import './styles/deck.css';
 
+/* Self-hosted display face for the DJ Deck Pro nameplate — no runtime CDN
+ * (PRD §13). Latin subset only. */
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/michroma.woff2') format('woff2');
+}
+
 html,
 body,
 #root {

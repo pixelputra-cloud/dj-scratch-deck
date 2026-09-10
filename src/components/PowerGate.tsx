@@ -4,8 +4,8 @@ import { useDeckStore } from '../state/useDeckStore'
 
 /**
  * "Tap to power on" click gate (PRD §4.3). A hand gesture is not a user-input
- * event, so the AudioContext can only be resumed from a real click. Framed as
- * a power switch on the plinth, not a browser-compliance apology.
+ * event, so the AudioContext can only be resumed from a real click. Staged as
+ * a darkened booth — one record turning in the blur behind a lit nameplate.
  */
 export function PowerGate() {
   const powered = useDeckStore((s) => s.powered)
@@ -26,15 +26,30 @@ export function PowerGate() {
   }
 
   return (
-    <div className="tt-powergate" role="dialog" aria-label="Power on the turntable">
+    <div className="tt-powergate" role="dialog" aria-label="Power on the deck">
+      <div className="tt-powergate__disc" aria-hidden>
+        <span className="tt-powergate__disc-label" />
+        <span className="tt-powergate__disc-sheen" />
+      </div>
+      <div className="tt-powergate__grain" aria-hidden />
+      <div className="tt-powergate__vignette" aria-hidden />
+
       <div className="tt-powergate__panel">
-        <p className="tt-powergate__kicker">DJ DECK PRO</p>
-        <h1 className="tt-powergate__title">Power on the deck</h1>
+        <p className="tt-powergate__eyebrow">Gesture-controlled turntable</p>
+
+        <h1 className="tt-powergate__brand">
+          <span className="tt-powergate__brand-main">DJ&nbsp;DECK</span>
+          <span className="tt-powergate__brand-pro">PRO</span>
+        </h1>
+
+        <p className="tt-powergate__sub">Power on the deck</p>
+
         <p className="tt-powergate__body">
-          Expressive, responsive gestural control of a record — play the platter
-          with your hands in front of the webcam. Every control also works with
-          the mouse. Nothing is uploaded; audio and camera stay on your machine.
+          Play a record with your hands in front of the webcam — every control
+          also works with the mouse. Nothing is uploaded; audio and camera stay
+          on your machine.
         </p>
+
         <button
           type="button"
           className="tt-powergate__switch"
@@ -43,8 +58,9 @@ export function PowerGate() {
           disabled={busy}
         >
           <span className="tt-powergate__switch-dot" aria-hidden />
-          {busy ? 'Starting…' : 'POWER'}
+          {busy ? 'Starting…' : 'Power'}
         </button>
+
         {err ? <p className="tt-powergate__err">{err}</p> : null}
       </div>
     </div>
