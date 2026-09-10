@@ -81,7 +81,7 @@ src/
     deckRuntime.ts                  mutable object for CONTINUOUS per-frame values (position, velocity, motorOn, …). read via ref, never React.
     deckController.ts               the ONE rAF loop + engine glue. only caller of stepPlatter / engine.setRate. also processGestureResult().
   components/
-    Deck.tsx                        composes the deck; owns the single view frame loop (writes vinyl + strobe transforms)
+    Deck.tsx                        composes the deck; owns the single view frame loop (writes the disc rotation; vinyl + rim ring locked together)
     Platter.tsx                     platter; publishes geometry (px) for scratch maths; pointer scratch; drag-to-load drop target
     Vinyl.tsx  StrobeRing.tsx       the record + the rim strobe band
     StartButton.tsx SpeedSelector.tsx PitchFader.tsx   skeuomorphic transport controls (left stack)
@@ -209,11 +209,11 @@ column. **Current:**
 - **Centre label** rebuilt as a real record label: cream paper, per-track accent
   rim, 72-tick printed bezel, curved TITLE (top arc) + ARTIST (bottom arc) via
   `<textPath>`, BPM caption, reinforced hole.
-- **Strobe:** still the Technics aliasing behaviour, but **driven off the pitch
-  setting itself, not the measured velocity**, and it **only animates while the
-  motor is driving the platter** (frozen when stopped or coasting down) — fixes
-  a bug where it span while the disc sat still. Rebuilt as a 2-row fine tick
-  band + one bright index mark.
+- **Rim marker ring** (`StrobeRing`): the PRD's Technics strobe-aliasing idea
+  was tried (drift off pitch offset) but read as disconnected — it now **rotates
+  locked to the disc** (same transform as the vinyl in `Deck`'s frame loop), so
+  the bold index mark tracks the record's own reference and the ring stops when
+  the disc stops. Sparse (60 marks) so it doesn't shimmer when spinning.
 - **Platter** reworked to read as die-cast aluminium (fine machining, brushed
   conic sheen, raised machined rim lip, inner vignette).
 

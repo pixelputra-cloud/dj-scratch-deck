@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { NOMINAL_RPM_33 } from '../lib/constants'
-import { mod } from '../lib/math'
 import { deckRuntime } from '../state/deckRuntime'
 import { onFrame } from '../state/deckController'
 import { Platter } from './Platter'
@@ -11,40 +10,29 @@ import { StartButton } from './StartButton'
 /**
  * Composes the deck: one large centred platter with the transport controls
  * floating around it — no chassis. Owns the single view frame loop, which
- * writes the vinyl rotation and strobe drift straight to the DOM from
- * deckRuntime — no React re-render per frame (PRD §10).
+ * writes the disc rotation straight to the DOM from deckRuntime — no React
+ * re-render per frame (PRD §10).
  */
 export function Deck() {
   const vinylRef = useRef<SVGGElement>(null)
   const strobeRef = useRef<SVGGElement>(null)
-  const strobeAngle = useRef(0)
 
   useEffect(() => {
-    return onFrame((dt) => {
-      const { positionSamples, sampleRate, platter, motorOn, pitchPercent } =
-        deckRuntime
+    return onFrame(() => {
+      const { positionSamples, sampleRate } = deckRuntime
 
       // Rotation from the audio playhead. SAMPLES_PER_REV is constant; because
       // position already advances at the pitched/rpm rate, a constant divisor
       // gives the right visual speed everywhere and audio can never drift (§5.2).
       const samplesPerRev = (sampleRate * 60) / NOMINAL_RPM_33
       const angle = (positionSamples / samplesPerRev) * 360
-      vinylRef.current?.setAttribute('transform', `rotate(${angle} 50 50)`)
 
-      // Strobe: like a real Technics — dead stationary at 0% pitch, crawling in
-      // proportion to the pitch offset, and only while the motor is actually
-      // driving the platter. It is driven off the pitch setting itself (not the
-      // measured velocity), so a spin-up transient or integrator residual never
-      // makes a "locked" strobe wander.
-      const spinning = motorOn && Math.abs(platter.velocity) > 0.04
-      if (spinning && Math.abs(pitchPercent) >= 0.4) {
-        const offset = platter.nominalRate * (pitchPercent / 100)
-        strobeAngle.current = mod(strobeAngle.current + offset * 360 * dt, 360)
-      }
-      strobeRef.current?.setAttribute(
-        'transform',
-        `rotate(${strobeAngle.current} 50 50)`,
-      )
+      // The vinyl AND the outer strobe/index ring rotate together, locked to
+      // the disc — so the rim marker always lines up with the record's own
+      // reference mark, and stops when the disc stops.
+      const t = `rotate(${angle} 50 50)`
+      vinylRef.current?.setAttribute('transform', t)
+      strobeRef.current?.setAttribute('transform', t)
     })
   }, [])
 
