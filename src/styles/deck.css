@@ -129,6 +129,9 @@
   display: grid;
   place-items: center;
   padding: 40px 16px 16px;
+  /* single source of truth for the disc diameter — the transport stack sizes
+     itself from the space this leaves in the left gutter */
+  --disc-w: min(80vh, 53vw, 620px);
 }
 
 /* ===================== platter ===================== */
@@ -136,7 +139,7 @@
 .tt-platter {
   position: relative;
   flex: 0 0 auto;
-  width: min(80vh, 53vw, 620px);
+  width: var(--disc-w);
   aspect-ratio: 1;
   border-radius: 50%;
   touch-action: none;
@@ -299,13 +302,16 @@
 .tt-deck__controls {
   position: absolute;
   top: 50%;
-  /* Right edge parked just outside the disc (half the platter width + a gap),
-     but floored so the wider pitch row never leaves the viewport. */
-  right: min(
-    calc(50% + min(40vh, 26.5vw, 310px) + clamp(10px, 1.6vw, 30px)),
-    calc(100% - 346px)
-  );
-  transform: translateY(-50%);
+  /* right edge parked 14px off the disc's left edge, whatever the disc size */
+  right: calc(50% + var(--disc-w) / 2 + 14px);
+  /* usable left gutter = the space between the viewport edge and the disc */
+  --gutter: calc((100vw - var(--disc-w)) / 2);
+  /* Shrink the stack (about its right edge, so it stays glued to the disc) to
+     whatever fraction of its ~342px natural width the gutter can hold — full
+     size on wide screens, down to 0.5 before it would ever reach the disc. */
+  transform: translateY(-50%) scale(0.82);
+  transform: translateY(-50%)
+    scale(clamp(0.5, (var(--gutter) - 24px) / 342px, 1));
   transform-origin: right center;
   z-index: 6;
   display: flex;
@@ -315,17 +321,6 @@
      row's centre is the rail's centre */
   align-items: center;
   gap: 16px;
-}
-/* shrink the whole stack rather than let it crowd the disc on smaller screens */
-@media (max-width: 1180px) {
-  .tt-deck__controls {
-    transform: translateY(-50%) scale(0.84);
-  }
-}
-@media (max-width: 960px) {
-  .tt-deck__controls {
-    transform: translateY(-50%) scale(0.68);
-  }
 }
 
 /* every PNG-faced control shares this reset */

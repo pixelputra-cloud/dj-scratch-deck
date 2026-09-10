@@ -205,11 +205,17 @@ column. **Current:**
     `+` are baked into the rail; a thin CSS `.tt-pitch__detent` line marks 0 and
     flares on the store-enforced centre detent. Tap within ~20 % of an end to
     jump to that extreme. Right = faster. Works the same at ±8 / ±16.
-  - The stack is `position: absolute`, parked off the **disc radius**
-    (`right: min(calc(50% + halfDisc + gap), calc(100% - 346px))`) so it hugs
-    the platter's left edge (~23 px gap at ≥1180 px wide) with the disc still
-    dead-centred; a `@media` step scales the whole stack down (0.84 → 0.68) on
-    narrower viewports instead of letting it crowd the disc.
+  - The disc diameter is one var, `--disc-w: min(80vh, 53vw, 620px)` on
+    `.tt-deck`, used by both `.tt-platter` and the stack. The stack is
+    `position: absolute`, right edge parked 14 px off the disc's left edge
+    (`right: calc(50% + var(--disc-w)/2 + 14px)`), and it **scales continuously
+    to fit the left gutter**: `transform: scale(clamp(0.5, (var(--gutter) -
+    24px) / 342px, 1))` with `--gutter: (100vw - var(--disc-w))/2` and
+    `transform-origin: right center` (342 px ≈ the row's natural width; a static
+    `scale(0.82)` precedes it as a fallback for engines without length/length
+    division). So it's full size when the gutter is wide, shrinks smoothly as
+    the viewport narrows, and never reaches the (still dead-centred) disc —
+    ~14 px gap at every width, down to a 0.5 floor.
   - Only four live-accent tokens remain in `tokens.css`
     (`--analog-ink`, `--analog-led`, `--analog-led-glow`, `--analog-lcd-ink`);
     the old CSS-drawn `--analog-cap/-frame/-shade/…` and dead `--fader-*` tokens
