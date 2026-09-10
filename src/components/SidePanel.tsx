@@ -33,9 +33,7 @@ export function SidePanel() {
         aria-expanded={open}
         aria-label={open ? 'Collapse panel' : 'Open panel'}
       >
-        <span className="tt-panel__handle-label">
-          {tab === 'crate' ? 'CRATE' : 'GESTURES'}
-        </span>
+        <span className="tt-panel__handle-label">CRATE / GESTURES</span>
         <span className="tt-panel__handle-chev">{open ? '▸' : '◂'}</span>
       </button>
 
