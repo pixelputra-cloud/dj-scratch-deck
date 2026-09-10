@@ -1,3 +1,4 @@
+import { asset } from '../lib/asset'
 import { NOMINAL_RPM_33 } from '../lib/constants'
 import { useDeckStore } from '../state/useDeckStore'
 
@@ -10,12 +11,12 @@ import { useDeckStore } from '../state/useDeckStore'
  */
 const IMG = {
   33: {
-    on: '/controls/speed-selector-33-on.png',
-    off: '/controls/speed-selector-33-off.png',
+    on: asset('controls/speed-selector-33-on.png'),
+    off: asset('controls/speed-selector-33-off.png'),
   },
   45: {
-    on: '/controls/speed-selector-45-on.png',
-    off: '/controls/speed-selector-45-off.png',
+    on: asset('controls/speed-selector-45-on.png'),
+    off: asset('controls/speed-selector-45-off.png'),
   },
 } as const
 

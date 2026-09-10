@@ -4,6 +4,8 @@
  * truth for what crosses the port in either direction.
  */
 
+import { asset } from '../lib/asset'
+
 /** main thread -> worklet */
 export type ToWorkletMessage =
   | {
@@ -30,4 +32,4 @@ export type FromWorkletMessage =
 
 export const RATE_PARAM = 'rate'
 export const PROCESSOR_NAME = 'turntable-processor'
-export const WORKLET_URL = '/worklets/turntable-processor.js'
+export const WORKLET_URL = asset('worklets/turntable-processor.js')

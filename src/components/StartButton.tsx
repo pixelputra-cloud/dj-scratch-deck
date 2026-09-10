@@ -1,3 +1,4 @@
+import { asset } from '../lib/asset'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
@@ -24,11 +25,11 @@ export function StartButton() {
       onClick={toggleMotor}
     >
       <img
-        src={
+        src={asset(
           motorOn
-            ? '/controls/start-stop-on.png'
-            : '/controls/start-stop-off.png'
-        }
+            ? 'controls/start-stop-on.png'
+            : 'controls/start-stop-off.png',
+        )}
         alt=""
         draggable={false}
       />

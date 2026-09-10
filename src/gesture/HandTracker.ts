@@ -17,13 +17,14 @@ import {
   HandLandmarker,
   type HandLandmarkerResult,
 } from '@mediapipe/tasks-vision'
+import { asset } from '../lib/asset'
 import { CAMERA_FPS_IDEAL, CAMERA_HEIGHT, CAMERA_WIDTH } from '../lib/constants'
 import type { CameraState } from '../state/useDeckStore'
 import type { Handedness } from './gestureMachine'
 import type { Point } from './poseCodes'
 
-const MODEL_PATH = '/models/hand_landmarker.task'
-const WASM_BASE = '/wasm'
+const MODEL_PATH = asset('models/hand_landmarker.task')
+const WASM_BASE = asset('wasm')
 
 export interface RawHand {
   handedness: Handedness

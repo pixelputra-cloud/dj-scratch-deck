@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { asset } from '../lib/asset'
 import { PITCH_DETENT_WIDTH } from '../lib/constants'
 import { clamp } from '../lib/math'
 import { useDeckStore } from '../state/useDeckStore'
@@ -114,7 +115,7 @@ export function PitchFader() {
         <span className="tt-pitch__detent" aria-hidden />
         <img
           className="tt-pitch__slider"
-          src="/controls/pitch-fader-slider.png"
+          src={asset('controls/pitch-fader-slider.png')}
           alt=""
           draggable={false}
           style={{ left: `${sliderPct}%` }}
@@ -128,11 +129,11 @@ export function PitchFader() {
         aria-label={`Pitch range, currently plus or minus ${range} percent`}
       >
         <img
-          src={
+          src={asset(
             range >= 16
-              ? '/controls/pitch-fader-range-toggle-16.png'
-              : '/controls/pitch-fader-range-toggle-8.png'
-          }
+              ? 'controls/pitch-fader-range-toggle-16.png'
+              : 'controls/pitch-fader-range-toggle-8.png',
+          )}
           alt=""
           draggable={false}
         />

@@ -1,3 +1,4 @@
+import { asset } from '../lib/asset'
 import manifest from './manifest.json'
 import type { Track } from './types'
 
@@ -9,7 +10,7 @@ export function bundledCrate(): Track[] {
     title: t.title,
     artist: t.artist,
     bpm: t.bpm,
-    file: t.file,
+    file: asset(t.file),
     labelColor: t.labelColor,
     source: 'bundled' as const,
     license: t.license,

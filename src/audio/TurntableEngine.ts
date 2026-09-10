@@ -15,6 +15,7 @@ import {
   RATE_SMOOTHING_TAU,
   RATE_SMOOTHING_TAU_SCRATCH,
 } from '../lib/constants'
+import { asset } from '../lib/asset'
 import { clamp } from '../lib/math'
 import type { DecodedTrack, Track } from '../tracks/types'
 import {
@@ -234,7 +235,7 @@ export class TurntableEngine {
     if (this.noiseSource) return
     try {
       if (!this.noiseBuffer) {
-        const res = await fetch('/audio/vinyl-noise.wav')
+        const res = await fetch(asset('audio/vinyl-noise.wav'))
         if (!res.ok) return
         this.noiseBuffer = await this.ctx.decodeAudioData(await res.arrayBuffer())
       }
