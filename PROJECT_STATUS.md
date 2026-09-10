@@ -1,13 +1,14 @@
-# Project Status — Gesture-Controlled DJ Turntable
+# Project Status — Scratch Deck (gesture-controlled DJ turntable)
 
 **Snapshot for handoff.** Read this before working on the repo so you build on the
 current state without re-litigating decisions already made. `PRD.md` is the
 original spec; this file records what was actually built and where it diverged.
 
-- **Repo:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
-- **Branch:** `main` · 11 commits · working tree clean
-- **~4,000 lines** TS/TSX in `src/` · **51 unit tests** passing · `npm run build` + `npm run lint` green
-- **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control). Phases 4–5 (curated crate, art-direction polish) are not.
+- **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
+- **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
+- **Branch:** `main` · 28 commits · working tree clean · in sync with `origin/main`
+- **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
+- **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
 ---
 
@@ -51,16 +52,25 @@ Vendored offline (no runtime CDN, per PRD §4.3):
 - `public/wasm/` — the `tasks-vision` WASM fileset, copied from the npm package.
 - `public/audio/*.wav` — 6 crate loops + `vinyl-noise.wav` (**procedurally
   synthesised**, see pivots).
+- `public/controls/*.png` (11 files) — the transport-control button art
+  (source copies also kept in `assets/`).
+
+Every runtime reference to a `public/` file goes through **`src/lib/asset.ts`**
+(`asset(p)` → `import.meta.env.BASE_URL + p`) so the bundle works both at a
+domain root and under a sub-path. Vite rebases HTML/CSS asset URLs with `base`
+by itself; JS string literals it does not, hence the helper.
 
 ---
 
 ## 3. Architecture / file map
 
 ```
+.github/workflows/deploy.yml        build (npm ci · tsc · vite build · lint) + publish dist/ to GitHub Pages on push to main
+
 public/
   worklets/turntable-processor.js   plain-JS worklet: virtual read head, 4-tap cubic Hermite,
                                     negative-capable `rate` a-rate AudioParam, ~30 Hz playhead postback
-  models/ wasm/ audio/              vendored assets
+  models/ wasm/ audio/ controls/    vendored assets (controls/ = transport-button PNGs)
 
 src/
   main.tsx  App.tsx                 App = layout shell: <GestureBackdrop> + <Deck> + <SidePanel> + <PowerGate>
@@ -84,7 +94,7 @@ src/
     Deck.tsx                        composes the deck; owns the single view frame loop (writes the disc rotation; vinyl + rim ring locked together)
     Platter.tsx                     platter; publishes geometry (px) for scratch maths; pointer scratch; drag-to-load drop target
     Vinyl.tsx  StrobeRing.tsx       the record + the rim strobe band
-    StartButton.tsx SpeedSelector.tsx PitchFader.tsx   skeuomorphic transport controls (left stack)
+    StartButton.tsx SpeedSelector.tsx PitchFader.tsx   PNG-faced transport controls (left stack, <img> src swaps on state)
     SidePanel.tsx                   right-edge tabbed drawer -> CratePanel / GesturePanel
     Crate.tsx (CratePanel) GestureHUD.tsx (GesturePanel) TrackCard.tsx
     GestureBackdrop.tsx CameraControl.tsx PowerGate.tsx
@@ -92,7 +102,7 @@ src/
     manifest.json loadManifest.ts   bundled crate
     userTrack.ts                     trackFromFile / isAudioFile (shared by Crate + Platter)
     types.ts
-  lib/ constants.ts math.ts         PRD Appendix-A constants + pure helpers
+  lib/ constants.ts math.ts asset.ts   PRD Appendix-A constants + pure helpers + base-path asset() resolver
   styles/ tokens.css deck.css
 
 scripts/make_loops.mjs               regenerates the 6 procedural crate loops
@@ -151,7 +161,7 @@ control.
   artist / BPM), click-to-load, **drag a card onto the disc to load**, local
   file drop-and-decode (drop on the crate or on the disc), nothing uploaded.
 
-**51 tests:** `platterPhysics`, `oneEuroFilter`, `platterMapping` (±π seam both
+**55 tests:** `platterPhysics`, `oneEuroFilter`, `platterMapping` (±π seam both
 directions), `poseCodes`, `gestureMachine`.
 
 ---
@@ -190,14 +200,17 @@ column. **Current:**
   (`.tt-deck` is `display:grid; place-items:center`).
 - **Transport controls = a PNG-faced floating stack on the LEFT** (no housing).
   The button / rail / knob faces are pre-rendered images the user supplied,
-  vendored from `assets/` into **`public/controls/`** and referenced by absolute
-  path (same convention as `public/fonts`). Eleven files:
+  vendored from `assets/` into **`public/controls/`** and loaded via
+  `asset('controls/…')` (base-path safe). Eleven files:
   `speed-selector-{33,45}-{on,off}.png`, `start-stop-{on,off}.png`,
   `pitch-fader-{base,slider,lcd-readout,range-toggle-8,range-toggle-16}.png`.
   - `SpeedSelector` / `StartButton` / `PitchFader` range key: `<button>` whose
     `<img>` src swaps on state — every face is fully baked into the art now
     (no CSS overlays). `start-stop-on` (= "START" + lit lamp) shows while the
     motor runs, `start-stop-off` (= "STOP" + dark lamp) while it's stopped.
+  - The stack is `flex-direction: column; align-items: center` — the 33/45
+    pair and START sit centred on the pitch rail (the widest row; its readout
+    and range key are equal-width, so the row's centre is the rail's centre).
   - `PitchFader` keeps all its pointer logic; the rail is the `base` PNG, the
     knob is the `slider` PNG positioned by `left %` with `TRAVEL = 0.12`
     reserved at each end (kept in sync with `pointerToPitch`'s `pad`). The `–` /
@@ -274,6 +287,21 @@ column. **Current:**
   the view loop.
 - Added `cameraError`. Removed `waveforms`.
 
+### Deployment — GitHub Pages (new; the PRD only said "static build")
+- Repo `pixelputra-cloud/dj-scratch-deck`, public. `.github/workflows/deploy.yml`
+  runs on every push to `main`: `npm ci` → `npm run build` (with
+  `DEPLOY_BASE=/dj-scratch-deck/`) → `npm run lint` → `upload-pages-artifact` →
+  `deploy-pages`. Pages "build and deployment source" = **GitHub Actions**.
+- Live at <https://pixelputra-cloud.github.io/dj-scratch-deck/>. HTTPS is
+  automatic, so `getUserMedia` works for visitors.
+- `vite.config.ts` `base: process.env.DEPLOY_BASE || '/'` — local dev/build stay
+  at root, CI builds for the project sub-path. All the `public/` runtime refs
+  (worklet URL, MediaPipe model + WASM base, `vinyl-noise.wav` fetch, control
+  `<img>` srcs, `manifest.json` track files) now resolve through `asset()`; CSS
+  `url()` / HTML hrefs Vite rebases itself. No tests reference asset paths.
+- To ship a change: `git push`. To point at a different host/path: set
+  `DEPLOY_BASE` (or leave default `/` for a root deploy on Netlify/Vercel).
+
 ### Held from the PRD (keep these)
 Worklet virtual-read-head + Hermite + a-rate param; rotation from playhead never
 CSS-animated; one `stepPlatter`; isolated + tested ±π unwrap; One Euro filter;
@@ -301,11 +329,12 @@ Appendix-A constants; static build, no backend, no accounts, vendored model/WASM
 ```bash
 npm install
 npm run dev            # http://localhost:5173  (camera needs localhost or https)
-npm run build          # tsc -b && vite build -> static dist/
+npm run build          # tsc -b && vite build -> static dist/  (base '/')
 npm run preview        # serve dist/
-npx vitest run         # 51 tests
+npx vitest run         # 55 tests
 npm run lint           # oxlint
 node scripts/make_loops.mjs   # regenerate the 6 procedural crate loops
+git push              # -> GitHub Actions builds + deploys to Pages (~1 min)
 ```
 
 ---
@@ -322,9 +351,12 @@ node scripts/make_loops.mjs   # regenerate the 6 procedural crate loops
   needs a real browser + webcam. What *is* verifiable headless: layout geometry,
   the camera-denied degradation path, store/DOM state, and no-console-errors.
 - **The worklet is plain JS in `public/worklets/`** loaded via
-  `audioWorklet.addModule('/worklets/turntable-processor.js')` — do not convert
-  it to TS (PRD "Note on the worklet file"). Type the message contract in
-  `workletContract.ts` instead.
+  `audioWorklet.addModule(asset('worklets/turntable-processor.js'))` — do not
+  convert it to TS (PRD "Note on the worklet file"). Type the message contract
+  in `workletContract.ts` instead.
+- **New `public/` assets must be reached through `asset()`** (in JS/TS) — a bare
+  `'/foo.png'` literal 404s on the Pages sub-path. CSS `url()` and HTML are fine
+  as-is (Vite rebases them).
 - **One rAF loop only** — `deckController.startLoop()`. Continuous per-frame
   values go through `deckRuntime` + `onFrame(cb)`, never React state.
 - **`platterMapping.ts` unwrap** is the highest-risk line in the project; it has
