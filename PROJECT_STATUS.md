@@ -188,20 +188,32 @@ column. **Current:**
   `object-fit: cover` projection so hands line up with the deck.
 - **One large disc** `min(80vh, 53vw, 620px)`, dead-centred in the stage
   (`.tt-deck` is `display:grid; place-items:center`).
-- **Transport controls = an ANALOG floating stack on the LEFT** (no housing),
-  styled after cream/ivory moulded-ABS gear with orange status lamps: square
-  33/45 caps with recessed lamp dots, a big domed round START whose ring lights
-  orange when the motor is on, an LCD-style `%` readout + `±8/±16` range cap in
-  one row, and a **horizontal** knurled pitch fader (`PitchFader`) with printed
-  `– / +` ends, a recessed slot, etched graduations and a bright orange centre
-  detent notch. Right = faster. Tap within ~20% of an end to jump to that
-  extreme; centre snaps to 0 (store-enforced detent). All caps ~20% larger than
-  the old skeuo set for easier gesture targeting. The stack is `position:
-  absolute` and parked off the **disc radius** — `right: min(calc(50% + halfDisc
-  + gap), calc(100% - 154px))` — so it hugs the platter's left edge on wide
-  screens and is floored 6px from the viewport edge on narrow ones. Palette
-  tokens live under `/* analog control surfaces */` in `tokens.css`
-  (`--analog-cap`, `--analog-frame`, `--analog-ink`, `--analog-led`, …).
+- **Transport controls = a PNG-faced floating stack on the LEFT** (no housing).
+  The button / rail / knob faces are pre-rendered images the user supplied,
+  vendored from `assets/` into **`public/controls/`** and referenced by absolute
+  path (same convention as `public/fonts`). Ten files:
+  `speed-selector-{33,45}-{on,off}.png`, `start-stop.png`,
+  `pitch-fader-{base,slider,lcd-readout,range-toggle-8,range-toggle-16}.png`.
+  - `SpeedSelector` / `PitchFader` range key: `<button>` whose `<img>` src swaps
+    on state. `StartButton`: the pill PNG is a CSS `background`; a live
+    `.tt-start__label` (gradient matched to the pill's baked fill) covers the
+    baked "START" so it can still read **STOP**, and lights amber + shows an
+    inline LED dot while the motor runs.
+  - `PitchFader` keeps all its pointer logic; the rail is the `base` PNG, the
+    knob is the `slider` PNG positioned by `left %` with `TRAVEL = 0.12`
+    reserved at each end (kept in sync with `pointerToPitch`'s `pad`). The `–` /
+    `+` are baked into the rail; a thin CSS `.tt-pitch__detent` line marks 0 and
+    flares on the store-enforced centre detent. Tap within ~20 % of an end to
+    jump to that extreme. Right = faster. Works the same at ±8 / ±16.
+  - The stack is `position: absolute`, parked off the **disc radius**
+    (`right: min(calc(50% + halfDisc + gap), calc(100% - 346px))`) so it hugs
+    the platter's left edge (~23 px gap at ≥1180 px wide) with the disc still
+    dead-centred; a `@media` step scales the whole stack down (0.84 → 0.68) on
+    narrower viewports instead of letting it crowd the disc.
+  - Only four live-accent tokens remain in `tokens.css`
+    (`--analog-ink`, `--analog-led`, `--analog-led-glow`, `--analog-lcd-ink`);
+    the old CSS-drawn `--analog-cap/-frame/-shade/…` and dead `--fader-*` tokens
+    were removed.
 - **Crate + Gesture HUD merged into one right-edge tabbed drawer**
   (`SidePanel`, tabs *Crate* / *Gestures*); collapsed it's a single handle;
   turning the camera on brings the *Gestures* tab forward once. `CratePanel` /

@@ -1,9 +1,12 @@
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
- * Start/stop toggle (PRD §5.4). Click now; palm-hold gesture in Phase 3.
- * The spin-up torque and power-down pitch drop are the physics model's job
- * (platterPhysics) — this button only flips motorOn.
+ * Start/stop toggle (PRD §5.4). Click, or the FIST-HOLD gesture, flips
+ * motorOn — the spin-up torque / power-down pitch drop is platterPhysics' job.
+ *
+ * The pill face is a pre-rendered PNG (assets/ → public/controls/). Its baked
+ * "START" wordmark is covered by the live label so the button can still read
+ * "STOP", and the label lights amber while the motor runs.
  */
 export function StartButton() {
   const motorOn = useDeckStore((s) => s.motorOn)
@@ -20,7 +23,6 @@ export function StartButton() {
       aria-label={motorOn ? 'Stop motor' : 'Start motor'}
       onClick={toggleMotor}
     >
-      <span className="tt-start__ring" aria-hidden />
       <span className="tt-start__label">{motorOn ? 'STOP' : 'START'}</span>
     </button>
   )
