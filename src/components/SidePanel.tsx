@@ -15,6 +15,7 @@ export function SidePanel() {
   const [tab, setTab] = useState<Tab>('crate')
   const cameraOn = useDeckStore((s) => s.cameraState === 'on')
   const wasCameraOn = useRef(cameraOn)
+  const panelRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (cameraOn && !wasCameraOn.current) {
@@ -24,8 +25,18 @@ export function SidePanel() {
     wasCameraOn.current = cameraOn
   }, [cameraOn])
 
+  // Collapse when the pointer goes down anywhere outside the drawer.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [open])
+
   return (
-    <aside className="tt-panel" data-open={open}>
+    <aside ref={panelRef} className="tt-panel" data-open={open}>
       <button
         type="button"
         className="tt-panel__handle"
