@@ -38,8 +38,8 @@ export function PowerGate() {
         <p className="tt-powergate__eyebrow">Gesture-controlled turntable</p>
 
         <h1 className="tt-powergate__brand">
-          <span className="tt-powergate__brand-main">DJ&nbsp;DECK</span>
-          <span className="tt-powergate__brand-pro">PRO</span>
+          <span className="tt-powergate__brand-main">SCRATCH</span>
+          <span className="tt-powergate__brand-pro">DECK</span>
         </h1>
 
         <p className="tt-powergate__sub">Power on the deck</p>

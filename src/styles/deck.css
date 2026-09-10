@@ -1089,8 +1089,8 @@
 .tt-powergate__panel {
   position: relative;
   z-index: 1;
-  width: min(440px, 92vw);
-  padding: 42px 44px 38px;
+  width: min(480px, 92vw);
+  padding: 42px 40px 38px;
   text-align: center;
   border-radius: 20px;
   background:
@@ -1125,8 +1125,8 @@
   line-height: 1;
 }
 .tt-powergate__brand-main {
-  font-size: clamp(26px, 6.4vw, 38px);
-  letter-spacing: 0.1em;
+  font-size: clamp(23px, 5.6vw, 33px);
+  letter-spacing: 0.09em;
   background: linear-gradient(180deg, #ffffff 0%, #f2ede4 40%, #9ea0a6 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -1134,9 +1134,9 @@
   filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.6));
 }
 .tt-powergate__brand-pro {
-  font-size: clamp(13px, 3vw, 17px);
-  letter-spacing: 0.62em;
-  text-indent: 0.62em; /* balance the trailing letter-space */
+  font-size: clamp(12px, 2.7vw, 16px);
+  letter-spacing: 0.5em;
+  text-indent: 0.5em; /* balance the trailing letter-space */
   color: var(--backlight);
   text-shadow: 0 0 26px rgba(255, 158, 61, 0.6);
   padding-top: 9px;
@@ -1152,7 +1152,7 @@
 }
 .tt-powergate__body {
   margin: 12px auto 26px;
-  max-width: 34ch;
+  max-width: 46ch;
   font-size: 12.5px;
   line-height: 1.65;
   color: var(--text-faint);
@@ -1210,7 +1210,7 @@
 }
 .tt-powergate__err {
   margin: 18px auto 0;
-  max-width: 34ch;
+  max-width: 44ch;
   font-family: ui-monospace, Menlo, monospace;
   font-size: 11px;
   line-height: 1.4;
