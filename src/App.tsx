@@ -33,7 +33,7 @@ export default function App() {
         <div className="tt-app__brand">
           <span className="tt-app__logo" aria-hidden />
           <span>
-            GESTURE <b>TURNTABLE</b>
+            DJ DECK <b>PRO</b>
           </span>
         </div>
         <div className="tt-app__status">

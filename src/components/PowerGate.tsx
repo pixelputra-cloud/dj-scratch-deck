@@ -28,7 +28,7 @@ export function PowerGate() {
   return (
     <div className="tt-powergate" role="dialog" aria-label="Power on the turntable">
       <div className="tt-powergate__panel">
-        <p className="tt-powergate__kicker">GESTURE-CONTROLLED TURNTABLE</p>
+        <p className="tt-powergate__kicker">DJ DECK PRO</p>
         <h1 className="tt-powergate__title">Power on the deck</h1>
         <p className="tt-powergate__body">
           Expressive, responsive gestural control of a record — play the platter
