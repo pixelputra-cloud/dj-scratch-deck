@@ -1,14 +1,26 @@
-# Gesture-Controlled DJ Turntable
+# Scratch Deck — a gesture-controlled DJ turntable
+
+**▶ Play it: https://pixelputra-cloud.github.io/dj-scratch-deck/**
 
 One photogenic turntable you play with your hands in front of a webcam —
 scratching the platter, riding the pitch fader, stopping and starting the
-motor. Every gesture control is also a normal clickable control.
+motor. Every gesture control is also a normal clickable control, so it works
+with just a mouse too. Nothing is uploaded: the audio and the camera feed
+never leave your machine.
 
-Built from [`PRD.md`](PRD.md). This tree covers **Phases 0–3**: scaffold, the
-audio engine, the visual deck with full mouse/touch control, and hands-free
-gesture control (MediaPipe hand tracking in a worker). The curated crate
-(Phase 4) and art direction (Phase 5) are not built yet — see
-[Status](#status).
+Built from [`PRD.md`](PRD.md). This is an **MVP** — scaffold, the audio
+engine, the visual deck with full mouse/touch control, and hands-free gesture
+control (MediaPipe hand tracking). The curated crate (Phase 4) and final art
+direction (Phase 5) are still open — see [Status](#status).
+
+## Controls
+
+| Gesture | Mouse | Does |
+|---|---|---|
+| Open hand over the platter | drag the platter | **scratch** — drives the record, reverse included |
+| Thumb + index pinch, move up/down | drag the pitch fader | **pitch** (±8 / ±16 %) |
+| Make a fist, hold still off the platter | click **START / STOP** | start / stop the motor |
+| Index + middle, hold still | click **33 / 45** | switch speed |
 
 ## Run it
 
@@ -17,14 +29,24 @@ npm install
 npm run dev
 ```
 
-Then open the printed `localhost` URL. `getUserMedia` (Phase 3) needs a secure
-context, so camera features will require **HTTPS or `localhost`** when they land.
+Then open the printed `localhost` URL. `getUserMedia` needs a secure context —
+**HTTPS or `localhost`** — so the webcam only works on the deployed link or a
+local dev server, not from a plain `file://` open.
 
 ```bash
 npm run build     # static bundle in dist/, deployable to any static host
 npm run test      # Vitest — the maths (physics, filters, angle unwrap)
-npm run test -- --watch
+npm run lint
 ```
+
+### Deploy
+
+`main` auto-deploys to GitHub Pages via
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The build reads
+its base path from `DEPLOY_BASE` (the workflow sets `/dj-scratch-deck/`;
+default is `/`), and every runtime reference to a `public/` file goes through
+[`src/lib/asset.ts`](src/lib/asset.ts) so the bundle is portable to any
+sub-path or a domain root.
 
 ## How it works
 
@@ -48,17 +70,18 @@ npm run test -- --watch
   One Euro filter → clamped playback rate. The ±π unwrap is the highest-risk
   line in the project and is unit-tested crossing the seam in both directions.
   The mouse and the fingertip share this one path.
-- **Gestures** — `HandLandmarker` runs in
-  [`handTracker.worker.ts`](src/gesture/handTracker.worker.ts) (frames sent as
-  transferred `ImageBitmap`s). Landmarks →
+- **Gestures** — `HandLandmarker` ([`@mediapipe/tasks-vision`](https://www.npmjs.com/package/@mediapipe/tasks-vision))
+  runs on the main thread in [`HandTracker.ts`](src/gesture/HandTracker.ts);
+  its WASM loader would not reliably initialise inside a module worker, and
+  `detectForVideo` is ~10–25 ms. Landmarks →
   [`poseCodes.ts`](src/gesture/poseCodes.ts) (5-bit finger pose, hand scale) →
-  [`gestureMachine.ts`](src/gesture/gestureMachine.ts) (2-frame scratch enter /
+  [`gestureMachine.ts`](src/gesture/gestureMachine.ts) (1-frame scratch enter /
   3-frame exit hysteresis, 700 ms latched dwell, 500 ms global cooldown,
   annulus-priority disambiguation, two-hand role assignment). The camera frame
   maps onto the platter, so the same `ScratchTracker` drives scratch from a
-  fingertip. All of this is pure and unit-tested before it touches audio.
-  The `<CameraPanel>` shows the mirrored feed with a live landmark skeleton so
-  a user can see *why* tracking isn't working.
+  fingertip. All of this is pure and unit-tested before it touches audio. The
+  full-page camera backdrop carries a live landmark skeleton so a user can see
+  *why* tracking isn't working.
 - **State** — [`useDeckStore`](src/state/useDeckStore.ts) (Zustand) holds
   discrete state; continuous per-frame values ride in
   [`deckRuntime`](src/state/deckRuntime.ts), read via ref, never through React.
@@ -98,10 +121,10 @@ node scripts/make_loops.mjs
 |---|---|
 | 0 · Scaffold | ✅ Vite 8 + React 19 + TS + Tailwind 4 + Zustand, Vitest, tokens, vendored model/WASM |
 | 1 · Audio engine | ✅ worklet read head, cubic interp, `rate` AudioParam, `TurntableEngine`, physics + tests, power gate |
-| 2 · The deck, visually | ✅ plinth, platter, vinyl, spindle, tonearm, strobe, controls, pitch detent; rotation locked to audio; mouse scratch |
-| 3 · Gesture control | ✅ MediaPipe in a worker, landmark overlay, all four gestures (SCRATCH, PINCH-PITCH, PALM-HOLD, TWO-FINGER-HOLD), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass needs real Chrome + a webcam** — the in-app test browser blocks `getUserMedia`, and the camera-denied degradation path is verified there instead. |
-| 4 · Crate & uploads | 🟡 crate UI, manifest, waveform thumbnails, local file drop all work; **bundled tracks are placeholders** |
-| 5 · Polish & art direction | ⛔ not started (vinyl-noise layer is wired but understated) |
+| 2 · The deck, visually | ✅ big centred platter, vinyl, machined strobe/marker ring, PNG-faced transport stack, pitch detent; rotation locked to audio; mouse scratch. Redesigned since the PRD: no chassis/tonearm/spindle, camera feed is the full-page background |
+| 3 · Gesture control | ✅ MediaPipe on the main thread, landmark overlay, all four gestures (open-hand SCRATCH, PINCH-PITCH, FIST-HOLD start/stop, TWO-FINGER-HOLD speed), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass wants real Chrome + a webcam.** |
+| 4 · Crate & uploads | 🟡 crate drawer, manifest, drag-a-card-onto-the-disc, local file drop all work; **bundled tracks are procedural placeholders** |
+| 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); vinyl-noise layer wired but understated |
 
 ## Browser targets
 
