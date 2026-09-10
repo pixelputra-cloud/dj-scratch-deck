@@ -191,14 +191,13 @@ column. **Current:**
 - **Transport controls = a PNG-faced floating stack on the LEFT** (no housing).
   The button / rail / knob faces are pre-rendered images the user supplied,
   vendored from `assets/` into **`public/controls/`** and referenced by absolute
-  path (same convention as `public/fonts`). Ten files:
-  `speed-selector-{33,45}-{on,off}.png`, `start-stop.png`,
+  path (same convention as `public/fonts`). Eleven files:
+  `speed-selector-{33,45}-{on,off}.png`, `start-stop-{on,off}.png`,
   `pitch-fader-{base,slider,lcd-readout,range-toggle-8,range-toggle-16}.png`.
-  - `SpeedSelector` / `PitchFader` range key: `<button>` whose `<img>` src swaps
-    on state. `StartButton`: the pill PNG is a CSS `background`; a live
-    `.tt-start__label` (gradient matched to the pill's baked fill) covers the
-    baked "START" so it can still read **STOP**, and lights amber + shows an
-    inline LED dot while the motor runs.
+  - `SpeedSelector` / `StartButton` / `PitchFader` range key: `<button>` whose
+    `<img>` src swaps on state — every face is fully baked into the art now
+    (no CSS overlays). `start-stop-on` (= "START" + lit lamp) shows while the
+    motor runs, `start-stop-off` (= "STOP" + dark lamp) while it's stopped.
   - `PitchFader` keeps all its pointer logic; the rail is the `base` PNG, the
     knob is the `slider` PNG positioned by `left %` with `TRAVEL = 0.12`
     reserved at each end (kept in sync with `pointerToPitch`'s `pad`). The `–` /

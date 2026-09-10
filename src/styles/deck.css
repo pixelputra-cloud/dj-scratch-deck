@@ -325,7 +325,8 @@
 
 /* every PNG-faced control shares this reset */
 .tt-speed__btn,
-.tt-pitch__range {
+.tt-pitch__range,
+.tt-start {
   padding: 0;
   border: 0;
   background: none;
@@ -335,6 +336,7 @@
 }
 .tt-speed__btn img,
 .tt-pitch__range img,
+.tt-start img,
 .tt-pitch__slider {
   display: block;
   width: 100%;
@@ -343,61 +345,19 @@
   user-select: none;
 }
 .tt-speed__btn:disabled,
-.tt-pitch__range:disabled {
+.tt-pitch__range:disabled,
+.tt-start:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* --- start / stop --- */
+/* --- start / stop (face swaps between the on / off PNGs) --- */
 .tt-start {
-  position: relative;
   width: 212px;
   height: 64px;
-  padding: 0;
-  border: 0;
-  background: url('/controls/start-stop.png') center / contain no-repeat;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 90ms ease, filter 150ms ease;
-}
-/* the label sits on the pill's inner face, hiding the baked "START" so the
-   button can still say "STOP" */
-.tt-start__label {
-  position: absolute;
-  inset: 3px 4px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font: 800 15px/1 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.16em;
-  color: var(--analog-ink);
-  /* matches the pill's baked vertical gradient so the swap is seamless */
-  background: linear-gradient(180deg, #f0ebde, #e7e3d9);
-}
-.tt-start[data-on='true'] {
-  filter: brightness(1.02);
-}
-.tt-start[data-on='true'] .tt-start__label {
-  color: #7a2f10;
-  letter-spacing: 0.18em;
-  background: linear-gradient(180deg, #ffe7cf, #ffd3a6);
-}
-.tt-start[data-on='true'] .tt-start__label::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  margin-right: 9px;
-  border-radius: 50%;
-  background: var(--analog-led);
-  box-shadow: 0 0 9px var(--analog-led-glow), 0 0 2px #fff;
 }
 .tt-start:not(:disabled):active {
   transform: translateY(2px) scale(0.985);
-}
-.tt-start:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* --- 33 / 45 --- */

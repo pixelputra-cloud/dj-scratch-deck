@@ -64,8 +64,7 @@
   /* ---- transport stack (PNG-faced controls in assets/) ----------
      The button/rail/knob faces are pre-rendered images; only a few live
      accents are drawn in CSS over them. */
-  --analog-ink: #3b3323; /* live START/STOP label text */
-  --analog-led: #ff6a2b; /* orange status lamp / lit accents */
+  --analog-led: #ff6a2b; /* pitch centre-detent line + flash */
   --analog-led-glow: rgba(255, 106, 43, 0.75);
   --analog-lcd-ink: #ff8a3d; /* pitch % readout text */
 
