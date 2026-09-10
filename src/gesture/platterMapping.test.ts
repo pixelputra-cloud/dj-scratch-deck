@@ -6,7 +6,12 @@ import {
   ScratchTracker,
   unwrapAngle,
 } from './platterMapping'
-import { MAX_SCRATCH_RATE, OMEGA_NOMINAL_33 } from '../lib/constants'
+import {
+  MAX_SCRATCH_RATE,
+  OMEGA_NOMINAL_33,
+  SCRATCH_EXPO,
+  SCRATCH_GAIN,
+} from '../lib/constants'
 import { TAU } from '../lib/math'
 
 const PI = Math.PI
@@ -83,9 +88,19 @@ describe('inAnnulus', () => {
 })
 
 describe('angularVelocityToRate', () => {
-  it('nominal 33⅓ angular velocity maps to rate 1.0', () => {
-    expect(angularVelocityToRate(OMEGA_NOMINAL_33)).toBeCloseTo(1, 6)
-    expect(angularVelocityToRate(-OMEGA_NOMINAL_33)).toBeCloseTo(-1, 6)
+  it('nominal-speed sweep -> |g|=1 -> the gain, symmetrically', () => {
+    expect(angularVelocityToRate(OMEGA_NOMINAL_33)).toBeCloseTo(SCRATCH_GAIN, 6)
+    expect(angularVelocityToRate(-OMEGA_NOMINAL_33)).toBeCloseTo(-SCRATCH_GAIN, 6)
+  })
+  it('lifts small motions (|g|<1 gets boosted above linear)', () => {
+    const raw = 0.2 // g = 0.2 of nominal speed
+    const rate = angularVelocityToRate(OMEGA_NOMINAL_33 * raw)
+    const linear = raw * SCRATCH_GAIN
+    expect(rate).toBeGreaterThan(linear)
+    expect(rate).toBeCloseTo(Math.pow(raw, SCRATCH_EXPO) * SCRATCH_GAIN, 6)
+  })
+  it('an idle hand -> exactly zero (dead-band)', () => {
+    expect(angularVelocityToRate(OMEGA_NOMINAL_33 * 1e-5)).toBe(0)
   })
   it('clamps runaway values', () => {
     expect(angularVelocityToRate(OMEGA_NOMINAL_33 * 999)).toBe(MAX_SCRATCH_RATE)
@@ -102,7 +117,7 @@ describe('ScratchTracker', () => {
   })
 
   it('a steady forward drag produces a positive, bounded rate', () => {
-    const t = new ScratchTracker(1.5, 0.6)
+    const t = new ScratchTracker()
     t.begin()
     const cx = 0
     const cy = 0
@@ -120,7 +135,7 @@ describe('ScratchTracker', () => {
   })
 
   it('crossing the ±π seam mid-drag never produces a spike', () => {
-    const t = new ScratchTracker(1.5, 0.6)
+    const t = new ScratchTracker()
     t.begin()
     const cx = 0
     const cy = 0
@@ -134,8 +149,9 @@ describe('ScratchTracker', () => {
       const r = t.update(x, y, cx, cy, i * 0.01)
       maxRate = Math.max(maxRate, Math.abs(r.rate))
     }
-    // constant angular speed ~2 rad/s => rate ~0.57; nothing near the clamp
-    expect(maxRate).toBeLessThan(1.5)
+    // constant angular speed ~2 rad/s => a modest rate; nothing near the ±4
+    // clamp, which is what a seam spike would look like
+    expect(maxRate).toBeLessThan(2.5)
   })
 
   it('begin() resets so a new contact does not spike across the gap', () => {

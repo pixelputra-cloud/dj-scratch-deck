@@ -79,37 +79,53 @@ export function handCentroid(lm: Point[]): Point {
   return { x: x / idx.length, y: y / idx.length }
 }
 
+/** Mean of the four finger tips (index/middle/ring/pinky). The scratch pivot
+ *  input — averaging four points cuts per-landmark jitter well below a single
+ *  fingertip, so the angular velocity can be filtered less and lag less. */
+export function fingertipsCentroid(lm: Point[]): Point {
+  const idx = [8, 12, 16, 20]
+  let x = 0
+  let y = 0
+  for (const i of idx) {
+    x += lm[i].x
+    y += lm[i].y
+  }
+  return { x: x / idx.length, y: y / idx.length }
+}
+
 export type PoseName =
   | 'SCRATCH'
   | 'PINCH'
-  | 'PALM'
   | 'TWO-FINGER'
-  | 'OPEN'
   | 'FIST'
   | '—'
+
+const OPEN_HAND = FINGER.INDEX | FINGER.MIDDLE | FINGER.RING
 
 /** Human-readable label for the HUD. `pinching` is passed in because a pinch
  *  is a distance test, not a pure pose-code match. */
 export function poseName(code: number, pinching: boolean): PoseName {
   if (pinching) return 'PINCH'
   const four = code & FOUR_FINGERS
-  if (four === FOUR_FINGERS) return 'PALM'
-  if (four === (FINGER.INDEX | FINGER.MIDDLE)) return 'TWO-FINGER'
-  if (four === FINGER.INDEX) return 'SCRATCH'
   if (four === 0) return 'FIST'
-  if (code === (FOUR_FINGERS | FINGER.THUMB)) return 'OPEN'
+  if (four === (FINGER.INDEX | FINGER.MIDDLE)) return 'TWO-FINGER'
+  if ((code & OPEN_HAND) === OPEN_HAND) return 'SCRATCH'
   return '—'
 }
 
 // --- pose predicates the state machine keys off -----------------------------
 
-/** Index extended, ring & pinky NOT — middle is optional (PRD §6.3 SCRATCH). */
+/** Open hand — index, middle and ring all extended (thumb & pinky don't
+ *  matter). The pose you scratch a real record with, and the most robust for
+ *  MediaPipe to read while the hand is moving fast. */
 export function isScratchPose(code: number): boolean {
-  return (
-    (code & FINGER.INDEX) !== 0 &&
-    (code & FINGER.RING) === 0 &&
-    (code & FINGER.PINKY) === 0
-  )
+  return (code & OPEN_HAND) === OPEN_HAND
+}
+
+/** Closed fist — none of the four fingers extended. Held still, off the
+ *  platter, this toggles the motor. */
+export function isFistPose(code: number): boolean {
+  return (code & FOUR_FINGERS) === 0
 }
 
 /**
@@ -123,11 +139,6 @@ export function isPinchContext(code: number): boolean {
     (code & FINGER.INDEX) !== 0 &&
     (code & (FINGER.MIDDLE | FINGER.RING | FINGER.PINKY)) === 0
   )
-}
-
-/** All four fingers extended (thumb ignored). */
-export function isPalmPose(code: number): boolean {
-  return (code & FOUR_FINGERS) === FOUR_FINGERS
 }
 
 /** Exactly index + middle among the four fingers. */

@@ -6,9 +6,9 @@ import { useDeckStore } from '../state/useDeckStore'
  * gesture vocabulary.
  */
 const VOCAB = [
-  ['SCRATCH', 'index in the platter — drives the record'],
+  ['SCRATCH', 'open hand over the platter — drives the record'],
   ['PINCH-PITCH', 'thumb + index — rides the pitch fader'],
-  ['PALM-HOLD', 'open hand, held still — start / stop'],
+  ['FIST-HOLD', 'make a fist off the platter, held still — start / stop'],
   ['TWO-FINGER-HOLD', 'index + middle, held still — 33 / 45'],
 ] as const
 

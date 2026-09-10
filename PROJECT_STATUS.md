@@ -127,13 +127,21 @@ control.
   uses**.
 - Strobe band, groove field, cast-metal platter, per-track label, detented pitch.
 
-**Gesture control (PRD Phase 3)**
+**Gesture control (PRD Phase 3, gesture set revised — see pivots)**
 - MediaPipe `HandLandmarker` (main thread) → mirror x → `poseCodes` →
-  `gestureMachine` → deck actions, + a full-page mirrored landmark overlay.
-- All four gestures: **SCRATCH** (2-frame enter / 3-frame exit hysteresis so a
-  dropped detection never drops the record), **PINCH-PITCH**, **PALM-HOLD** and
-  **TWO-FINGER-HOLD** (700 ms latched dwell, pose must break to re-arm), plus
-  500 ms global cooldown, annulus priority, two-hand role assignment.
+  `gestureMachine` → deck actions, + a full-page mirrored landmark overlay
+  (electric-cyan, layered ABOVE the deck).
+- Four gestures: **SCRATCH** = open hand over the platter (1-frame enter /
+  3-frame exit hysteresis so a dropped detection never drops the record;
+  scratch pivot = mean of the four fingertips); **PINCH-PITCH** = thumb+index;
+  **FIST-HOLD** = closed fist off the platter, still, 700 ms → start/stop;
+  **TWO-FINGER-HOLD** = index+middle, still, 700 ms → 33/45. 700 ms latched
+  dwell (pose must break to re-arm), 500 ms global cooldown, annulus priority,
+  two-hand role assignment.
+- Scratch response is shaped: `rate = sign(g)·|g|^0.7 · 1.7`, dead-banded and
+  clamped, with a raised One Euro filter (3.5 Hz / β 1.2) and a tighter
+  audio-side ramp (`RATE_SMOOTHING_TAU_SCRATCH` 0.008) while a hand/pointer is
+  on the record — so small hand motions register and the scratch lags less.
 - Camera-denied / no-camera path leaves the deck fully mouse-operable and shows
   the real failure reason (`cameraError`). **This is the only part of gesture
   that's verifiable without real hardware.**
@@ -217,11 +225,22 @@ column. **Current:**
 - **Drag-a-card-onto-the-disc** loading added (`Platter` is a drop target with a
   "DROP TO LOAD" ring) — matches PRD §8.3 intent.
 
-### Gesture mapping
+### Gesture vocabulary + mapping
+- PRD §6.3 had SCRATCH = a pointing index finger and PALM-HOLD = an open hand for
+  start/stop. **Now: SCRATCH = open hand** (how DJs actually scratch, and the
+  most robust pose for MediaPipe under fast motion), **start/stop = FIST-HOLD**
+  off the platter. `poseCodes` exposes `isScratchPose` (open hand),
+  `isFistPose`, `fingertipsCentroid`; `isPalmPose` is gone.
+- **Scratch sensitivity** raised deliberately: multi-fingertip pivot,
+  expo+gain response curve (`SCRATCH_GAIN`/`SCRATCH_EXPO`/`SCRATCH_DEADBAND`),
+  higher `ONE_EURO_*`, `RATE_SMOOTHING_TAU_SCRATCH`, `SCRATCH_ENTER_FRAMES` 1.
+  All are "tune by feel" constants in `lib/constants.ts`.
 - `gestureMachine`'s context takes a **`mapPoint` cover-fit projector** (mirrored
   normalised camera point → viewport px, matching the full-page feed) instead of
   an internal `CAM_SPAN` platter-radius span. On-screen hand position and scratch
   target are now the same thing.
+- The landmark overlay is **electric cyan**, layered **above** the deck (z-8)
+  rather than behind it — camera feed → platter + markings → hand mapping.
 
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in

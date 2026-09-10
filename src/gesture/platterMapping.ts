@@ -9,7 +9,15 @@
  * one angular-velocity path, not two.
  */
 
-import { MAX_SCRATCH_RATE, OMEGA_NOMINAL_33 } from '../lib/constants'
+import {
+  MAX_SCRATCH_RATE,
+  OMEGA_NOMINAL_33,
+  ONE_EURO_BETA,
+  ONE_EURO_MIN_CUTOFF,
+  SCRATCH_DEADBAND,
+  SCRATCH_EXPO,
+  SCRATCH_GAIN,
+} from '../lib/constants'
 import { clamp, TAU } from '../lib/math'
 import { OneEuroFilter } from './oneEuroFilter'
 
@@ -43,10 +51,18 @@ export function inAnnulus(
   return r >= outerRadius * innerFraction && r <= outerRadius
 }
 
-/** ω (rad/s) -> playback-rate units, clamped. Beyond the clamp it is tracking
- *  noise, not intent (PRD §6.3 step 6). */
+/**
+ * ω (rad/s) -> playback-rate units.
+ *   g       = ω / ω_nominal      (1.0 == a hand sweeping at 33⅓ speed)
+ *   shaped  = sign(g)·|g|^EXPO·GAIN   — EXPO<1 lifts small motions, GAIN scales
+ *   dead-band to zero, then clamp (beyond the clamp it is noise, not intent).
+ */
 export function angularVelocityToRate(omega: number): number {
-  return clamp(omega / OMEGA_NOMINAL_33, -MAX_SCRATCH_RATE, MAX_SCRATCH_RATE)
+  const g = omega / OMEGA_NOMINAL_33
+  const mag = Math.abs(g)
+  let rate = Math.sign(g) * Math.pow(mag, SCRATCH_EXPO) * SCRATCH_GAIN
+  if (Math.abs(rate) < SCRATCH_DEADBAND) rate = 0
+  return clamp(rate, -MAX_SCRATCH_RATE, MAX_SCRATCH_RATE)
 }
 
 /**
@@ -61,7 +77,7 @@ export class ScratchTracker {
   private lastTimestamp: number | null = null
   private omegaFilter: OneEuroFilter
 
-  constructor(minCutoff = 1.5, beta = 0.6) {
+  constructor(minCutoff = ONE_EURO_MIN_CUTOFF, beta = ONE_EURO_BETA) {
     this.omegaFilter = new OneEuroFilter({ minCutoff, beta, dCutoff: 1.0 })
   }
 

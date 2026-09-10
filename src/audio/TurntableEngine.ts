@@ -13,6 +13,7 @@
 import {
   MAX_TRACK_MINUTES,
   RATE_SMOOTHING_TAU,
+  RATE_SMOOTHING_TAU_SCRATCH,
 } from '../lib/constants'
 import { clamp } from '../lib/math'
 import type { DecodedTrack, Track } from '../tracks/types'
@@ -175,12 +176,15 @@ export class TurntableEngine {
   // ---- transport / rate ---------------------------------------------
 
   /** The one place a rate reaches the audio thread. setTargetAtTime on the
-   *  a-rate param gives a per-sample smoothed ramp — no zipper noise. */
-  setRate(rate: number): void {
+   *  a-rate param gives a per-sample smoothed ramp — no zipper noise. While a
+   *  hand/pointer is on the record `scratching` picks the tighter ramp so the
+   *  scratch tracks with less lag. */
+  setRate(rate: number, scratching = false): void {
     if (!this.worklet) return
     const p = this.worklet.parameters.get(RATE_PARAM)
     if (!p) return
-    p.setTargetAtTime(rate, this.ctx.currentTime, RATE_SMOOTHING_TAU)
+    const tau = scratching ? RATE_SMOOTHING_TAU_SCRATCH : RATE_SMOOTHING_TAU
+    p.setTargetAtTime(rate, this.ctx.currentTime, tau)
 
     if (this._noiseEnabled) {
       // surface noise pitches and swells with the scratch (PRD §7.1)

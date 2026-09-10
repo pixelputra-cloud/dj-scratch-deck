@@ -3,9 +3,10 @@ import {
   FINGER,
   FOUR_FINGERS,
   fingerExtended,
+  fingertipsCentroid,
   handCentroid,
   handScale,
-  isPalmPose,
+  isFistPose,
   isPinchContext,
   isScratchPose,
   isTwoFingerPose,
@@ -111,22 +112,31 @@ describe('fingerExtended / poseCode', () => {
 })
 
 describe('pose predicates', () => {
-  it('isScratchPose: index yes, ring/pinky no, middle optional', () => {
-    expect(isScratchPose(poseCode(hand({ index: true })))).toBe(true)
-    expect(isScratchPose(poseCode(hand({ index: true, middle: true })))).toBe(true)
+  it('isScratchPose is an open hand — index+middle+ring, pinky optional', () => {
     expect(
-      isScratchPose(poseCode(hand({ index: true, ring: true, pinky: true }))),
-    ).toBe(false)
-    expect(isScratchPose(poseCode(hand({ middle: true })))).toBe(false)
+      isScratchPose(poseCode(hand({ index: true, middle: true, ring: true }))),
+    ).toBe(true)
+    expect(
+      isScratchPose(
+        poseCode(hand({ index: true, middle: true, ring: true, pinky: true })),
+      ),
+    ).toBe(true)
+    expect(isScratchPose(poseCode(hand({ index: true })))).toBe(false)
+    expect(isScratchPose(poseCode(hand({ index: true, middle: true })))).toBe(false)
+    expect(isScratchPose(poseCode(hand()))).toBe(false)
   })
 
-  it('isPalmPose / isTwoFingerPose are mutually exclusive', () => {
-    const palm = poseCode(hand({ index: true, middle: true, ring: true, pinky: true }))
+  it('isFistPose / isScratchPose / isTwoFingerPose are mutually exclusive', () => {
+    const open = poseCode(hand({ index: true, middle: true, ring: true, pinky: true }))
     const two = poseCode(hand({ index: true, middle: true }))
-    expect(isPalmPose(palm)).toBe(true)
-    expect(isTwoFingerPose(palm)).toBe(false)
+    const fist = poseCode(hand())
+    expect(isScratchPose(open)).toBe(true)
+    expect(isTwoFingerPose(open)).toBe(false)
+    expect(isFistPose(open)).toBe(false)
     expect(isTwoFingerPose(two)).toBe(true)
-    expect(isPalmPose(two)).toBe(false)
+    expect(isScratchPose(two)).toBe(false)
+    expect(isFistPose(fist)).toBe(true)
+    expect(isScratchPose(fist)).toBe(false)
   })
 
   it('isPinchContext wants the other three fingers curled', () => {
@@ -150,18 +160,18 @@ describe('pinchDistance', () => {
 
 describe('poseName', () => {
   it('labels the vocabulary', () => {
-    expect(poseName(poseCode(hand({ index: true })), false)).toBe('SCRATCH')
-    expect(poseName(poseCode(hand({ index: true, middle: true })), false)).toBe(
-      'TWO-FINGER',
-    )
     expect(
       poseName(
         poseCode(hand({ index: true, middle: true, ring: true, pinky: true })),
         false,
       ),
-    ).toBe('PALM')
+    ).toBe('SCRATCH')
+    expect(poseName(poseCode(hand({ index: true, middle: true })), false)).toBe(
+      'TWO-FINGER',
+    )
     expect(poseName(0, true)).toBe('PINCH')
     expect(poseName(poseCode(hand()), false)).toBe('FIST')
+    expect(poseName(poseCode(hand({ index: true })), false)).toBe('—')
   })
 })
 
@@ -172,5 +182,18 @@ describe('handCentroid', () => {
     expect(c.x).toBeLessThan(0.6)
     expect(c.y).toBeGreaterThan(0.6)
     expect(c.y).toBeLessThan(0.8)
+  })
+})
+
+describe('fingertipsCentroid', () => {
+  it('is the mean of the four finger tips', () => {
+    const lm = hand({ index: true, middle: true, ring: true, pinky: true })
+    const c = fingertipsCentroid(lm)
+    const mx = (lm[8].x + lm[12].x + lm[16].x + lm[20].x) / 4
+    const my = (lm[8].y + lm[12].y + lm[16].y + lm[20].y) / 4
+    expect(c.x).toBeCloseTo(mx, 9)
+    expect(c.y).toBeCloseTo(my, 9)
+    // sits above the palm centroid (finger tips are further from the wrist)
+    expect(c.y).toBeLessThan(handCentroid(lm).y)
   })
 })

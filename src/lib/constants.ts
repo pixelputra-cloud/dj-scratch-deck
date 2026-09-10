@@ -14,8 +14,19 @@ export const SPINDOWN_TAU = 1.2
 export const RPM_CHANGE_RAMP = 0.4
 /** setTargetAtTime smoothing constant handed to the rate AudioParam. */
 export const RATE_SMOOTHING_TAU = 0.015
+/** shorter constant used while a hand/pointer is on the record — the gesture
+ *  signal is already filtered upstream, so tighten the audio-side ramp for a
+ *  snappier scratch. */
+export const RATE_SMOOTHING_TAU_SCRATCH = 0.008
 
 export const MAX_SCRATCH_RATE = 4.0
+/** overall scratch responsiveness: rate = sign(g)·|g|^EXPO · GAIN, clamped.
+ *  EXPO < 1 lifts small hand motions; GAIN scales the whole response. */
+export const SCRATCH_GAIN = 1.7
+export const SCRATCH_EXPO = 0.7
+/** below this |rate| the record is treated as held still — kills the creep a
+ *  higher filter cut-off would otherwise let through from an idle hand. */
+export const SCRATCH_DEADBAND = 0.015
 
 /** Platter gesture hit region is an annulus; inside this fraction of the
  *  radius a fingertip is excluded (tiny radius -> wild angular velocity). */
@@ -23,14 +34,19 @@ export const PLATTER_INNER_R = 0.18
 
 export const DWELL_MS = 700
 export const GESTURE_COOLDOWN_MS = 500
-export const SCRATCH_ENTER_FRAMES = 2
+/** engage scratch on the first qualifying frame (the open-hand pose is robust);
+ *  the 3-frame exit still guards against a dropped detection mid-scratch. */
+export const SCRATCH_ENTER_FRAMES = 1
 export const SCRATCH_EXIT_FRAMES = 3
 export const PINCH_ENTER_DIST = 0.35 // x handScale
 export const PINCH_EXIT_DIST = 0.55 // x handScale
 export const STILLNESS_THRESHOLD = 0.15 // x handScale per frame
 
-export const ONE_EURO_MIN_CUTOFF = 1.5 // Hz
-export const ONE_EURO_BETA = 0.6
+/** One Euro filter for the scratch angular velocity. Raised from the PRD's
+ *  1.5 / 0.6 so fast motion passes through with much less lag; the 4-fingertip
+ *  averaging upstream keeps it from getting jittery. */
+export const ONE_EURO_MIN_CUTOFF = 3.5 // Hz
+export const ONE_EURO_BETA = 1.2
 
 export const PITCH_RANGE_DEFAULT = 8 // %
 export const PITCH_RANGE_WIDE = 16 // %

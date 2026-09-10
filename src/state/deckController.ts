@@ -245,7 +245,7 @@ function step(dt: number, nowSeconds: number): void {
   deckRuntime.platter = stepPlatter(deckRuntime.platter, input, dt)
   deckRuntime.rate = platterRate(deckRuntime.platter)
 
-  if (engine) engine.setRate(deckRuntime.rate)
+  if (engine) engine.setRate(deckRuntime.rate, deckRuntime.scratching)
 
   for (const l of frameListeners) l(dt)
 }

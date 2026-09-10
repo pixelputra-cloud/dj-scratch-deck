@@ -25,10 +25,10 @@ import { clamp } from '../lib/math'
 import { inAnnulus, ScratchTracker } from './platterMapping'
 import {
   FINGER,
-  FOUR_FINGERS,
+  fingertipsCentroid,
   handCentroid,
   handScale,
-  isPalmPose,
+  isFistPose,
   isPinchContext,
   isScratchPose,
   isTwoFingerPose,
@@ -39,7 +39,8 @@ import {
   type Point,
 } from './poseCodes'
 
-const PALM_CODE = FOUR_FINGERS
+/** dwell-gesture identity tokens (compared with ===, never real pose codes) */
+const FIST_CODE = -1
 const TWO_CODE = FINGER.INDEX | FINGER.MIDDLE
 
 export type Handedness = 'Left' | 'Right'
@@ -177,14 +178,15 @@ export class GestureMachine {
       const code = poseCode(s.landmarks)
       const hs = handScale(s.landmarks)
       const centroid = handCentroid(s.landmarks)
-      const indexTip = s.landmarks[8]
       return {
         s,
         code,
         hs,
         centroid,
-        indexTipN: indexTip,
-        indexTipPx: ctx.mapPoint(indexTip),
+        // raw index tip — pinch-pitch's vertical drag reference
+        indexTipN: s.landmarks[8],
+        // 4-fingertip mean, projected to px — the scratch pivot + annulus test
+        anchorPx: ctx.mapPoint(fingertipsCentroid(s.landmarks)),
         pinchDist: pinchDistance(s.landmarks),
       }
     })
@@ -207,11 +209,11 @@ export class GestureMachine {
     }
 
     // ---- role assignment (PRD §6.4.4) ----
-    // the hand whose index tip is nearer the platter centre owns SCRATCH.
+    // the hand whose fingertips are nearer the platter centre owns SCRATCH.
     let scratchIdx = 0
     if (feats.length >= 2) {
       const d = feats.map((ft) =>
-        Math.hypot(ft.indexTipPx.x - cx, ft.indexTipPx.y - cy),
+        Math.hypot(ft.anchorPx.x - cx, ft.anchorPx.y - cy),
       )
       scratchIdx = d[0] <= d[1] ? 0 : 1
     }
@@ -222,8 +224,8 @@ export class GestureMachine {
     // ---- SCRATCH ----
     const sF = this.fsm(scratchFt.s.handedness)
     const inAnn = inAnnulus(
-      scratchFt.indexTipPx.x,
-      scratchFt.indexTipPx.y,
+      scratchFt.anchorPx.x,
+      scratchFt.anchorPx.y,
       cx,
       cy,
       radius,
@@ -252,8 +254,8 @@ export class GestureMachine {
     }
     if (sF.scratching) {
       const { rate } = sF.tracker.update(
-        scratchFt.indexTipPx.x,
-        scratchFt.indexTipPx.y,
+        scratchFt.anchorPx.x,
+        scratchFt.anchorPx.y,
         cx,
         cy,
         now / 1000,
@@ -265,8 +267,8 @@ export class GestureMachine {
     const aF = this.fsm(auxFt.s.handedness)
     const auxBusyWithScratch = oneHand && sF.scratching
     const auxFingerInAnnulus = inAnnulus(
-      auxFt.indexTipPx.x,
-      auxFt.indexTipPx.y,
+      auxFt.anchorPx.x,
+      auxFt.anchorPx.y,
       cx,
       cy,
       radius,
@@ -295,8 +297,8 @@ export class GestureMachine {
 
       // DWELL (only when not pinching)
       if (!aF.pinching) {
-        const candidate = isPalmPose(auxFt.code)
-          ? PALM_CODE
+        const candidate = isFistPose(auxFt.code)
+          ? FIST_CODE
           : isTwoFingerPose(auxFt.code)
             ? TWO_CODE
             : null
@@ -313,9 +315,9 @@ export class GestureMachine {
             aF.dwellStart = now
           }
           const progress = (now - aF.dwellStart) / DWELL_MS
-          result.activeDwell = poseName(candidate as number, false)
+          result.activeDwell = candidate === FIST_CODE ? 'FIST' : 'TWO-FINGER'
           if (progress >= 1) {
-            if (candidate === PALM_CODE) result.motorToggle = true
+            if (candidate === FIST_CODE) result.motorToggle = true
             else result.rpmToggle = true
             aF.latchedPose = candidate
             aF.dwellCandidate = null

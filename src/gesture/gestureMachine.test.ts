@@ -37,20 +37,23 @@ interface Fingers {
   pinky?: boolean
 }
 
-/** Build a synthetic HandSample. `indexTipN` places landmark 8 exactly. */
+/**
+ * Build a synthetic HandSample. Every *extended* fingertip is placed at
+ * `anchorN`, so `fingertipsCentroid` (the scratch pivot) lands exactly there.
+ */
 function mkHand(
   handedness: Handedness,
   opts: {
     fingers?: Fingers
-    indexTipN?: Point
+    anchorN?: Point
     pinch?: boolean
     wristShift?: number // add to every x — used to fake centroid motion
   } = {},
 ): HandSample {
-  const f = opts.fingers ?? { index: true }
-  const tip = opts.indexTipN ?? nAt(0, 0)
+  const f = opts.fingers ?? {}
+  const a = opts.anchorN ?? nAt(0, 0)
   const sx = opts.wristShift ?? 0
-  const wrist = { x: tip.x + sx, y: tip.y + 0.42 }
+  const wrist = { x: a.x + sx, y: a.y + 0.42 }
   const lm: Point[] = Array.from({ length: 21 }, () => ({ ...wrist }))
   lm[0] = { ...wrist }
   lm[5] = { x: wrist.x - 0.05, y: wrist.y - 0.2 }
@@ -60,26 +63,19 @@ function mkHand(
   lm[1] = { x: wrist.x - 0.1, y: wrist.y - 0.08 }
   lm[2] = { x: wrist.x - 0.14, y: wrist.y - 0.14 }
 
-  const chain = (
-    mcp: number,
-    j1: number,
-    j2: number,
-    tipI: number,
-    extended: boolean,
-    forced?: Point,
-  ) => {
+  const chain = (mcp: number, j1: number, j2: number, tipI: number, extended: boolean) => {
     const m = lm[mcp]
     if (extended) {
       lm[j1] = { x: m.x, y: m.y - 0.08 }
       lm[j2] = { x: m.x, y: m.y - 0.16 }
-      lm[tipI] = forced ? { x: forced.x + sx, y: forced.y } : { x: m.x, y: m.y - 0.24 }
+      lm[tipI] = { x: a.x + sx, y: a.y } // all extended tips share the anchor
     } else {
       lm[j1] = { x: m.x, y: m.y - 0.03 }
       lm[j2] = { x: m.x, y: m.y + 0.03 }
       lm[tipI] = { x: m.x, y: m.y + 0.09 }
     }
   }
-  chain(5, 6, 7, 8, f.index ?? false, f.index ? tip : undefined)
+  chain(5, 6, 7, 8, f.index ?? false)
   chain(9, 10, 11, 12, f.middle ?? false)
   chain(13, 14, 15, 16, f.ring ?? false)
   chain(17, 18, 19, 20, f.pinky ?? false)
@@ -91,13 +87,13 @@ function mkHand(
     lm[3] = { x: wrist.x - 0.12, y: wrist.y - 0.1 }
     lm[4] = { x: wrist.x - 0.06, y: wrist.y - 0.04 }
   }
-  if (opts.pinch) lm[4] = { x: tip.x + sx + 0.005, y: tip.y + 0.005 }
+  if (opts.pinch) lm[4] = { x: a.x + sx + 0.005, y: a.y + 0.005 }
 
   return { handedness, landmarks: lm }
 }
 
+const OPEN: Fingers = { index: true, middle: true, ring: true, pinky: true }
 const INDEX_ONLY: Fingers = { index: true }
-const PALM: Fingers = { index: true, middle: true, ring: true, pinky: true }
 const TWO: Fingers = { index: true, middle: true }
 const FIST: Fingers = {}
 
@@ -109,40 +105,32 @@ beforeEach(() => {
 describe('SCRATCH hysteresis', () => {
   const inAnn = nAt(90) // 90 px from centre — inside the annulus
 
-  it('needs 2 qualifying frames to engage', () => {
-    const h = () => [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn })]
-    const r1 = m.update(h(), 0, CTX)
-    expect(r1.scratchRate).toBeNull() // 1 frame — not yet
-    const r2 = m.update(h(), 16, CTX)
-    expect(r2.scratchRate).not.toBeNull() // engaged (rate may be 0 on first sample)
+  it('engages on the first qualifying frame (open hand over the annulus)', () => {
+    const r1 = m.update([mkHand('Right', { fingers: OPEN, anchorN: inAnn })], 0, CTX)
+    expect(r1.scratchRate).not.toBeNull() // engaged; rate may be 0 on first sample
   })
 
   it('a single dropped detection mid-scratch does NOT release the record', () => {
-    const good = [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn })]
-    const dropped = [mkHand('Right', { fingers: FIST, indexTipN: inAnn })] // pose lost
-    m.update(good, 0, CTX)
-    m.update(good, 16, CTX) // engaged
-    const a = m.update(dropped, 32, CTX)
+    const good = [mkHand('Right', { fingers: OPEN, anchorN: inAnn })]
+    const dropped = [mkHand('Right', { fingers: FIST, anchorN: inAnn })] // pose lost
+    m.update(good, 0, CTX) // engaged
+    const a = m.update(dropped, 16, CTX)
     expect(a.scratchRate).not.toBeNull() // 1 bad frame — still held
-    const b = m.update(dropped, 48, CTX)
+    const b = m.update(dropped, 32, CTX)
     expect(b.scratchRate).not.toBeNull() // 2 bad frames — still held
-    const c = m.update(dropped, 64, CTX)
+    const c = m.update(dropped, 48, CTX)
     expect(c.scratchRate).toBeNull() // 3 bad frames — released (SCRATCH_EXIT_FRAMES)
   })
 
   it('a steady rotation produces a signed, bounded rate', () => {
     let last = 0
     for (let i = 0; i <= 10; i++) {
-      const th = (i / 10) * (Math.PI / 2)
-      const tipN = {
+      const th = (i / 10) * (Math.PI / 3)
+      const anchorN = {
         x: 0.5 + (90 * Math.cos(th)) / SPAN,
         y: 0.5 + (90 * Math.sin(th)) / SPAN,
       }
-      const r = m.update(
-        [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: tipN })],
-        i * 16,
-        CTX,
-      )
+      const r = m.update([mkHand('Right', { fingers: OPEN, anchorN })], i * 20, CTX)
       if (r.scratchRate != null) last = r.scratchRate
     }
     expect(Math.abs(last)).toBeGreaterThan(0)
@@ -151,20 +139,24 @@ describe('SCRATCH hysteresis', () => {
 })
 
 describe('PINCH-PITCH', () => {
-  const far = nAt(230) // well outside the annulus so SCRATCH can't claim it
+  const far = nAt(280) // well outside the annulus
 
   it('captures a baseline and tracks vertical hand movement', () => {
     const down = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
       0,
       CTX,
     )
     expect(down.pitchValue).toBeCloseTo(0, 3) // p0 = 0, y = y0
 
-    // move the whole hand up by 0.1 normalised -> pitch rises by ~0.1*45 = 4.5%
-    const upTip = { x: far.x, y: far.y - 0.1 }
     const up = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: upTip, pinch: true })],
+      [
+        mkHand('Right', {
+          fingers: INDEX_ONLY,
+          anchorN: { x: far.x, y: far.y - 0.1 }, // hand up 0.1 -> ~+4.5%
+          pinch: true,
+        }),
+      ],
       16,
       CTX,
     )
@@ -174,13 +166,18 @@ describe('PINCH-PITCH', () => {
 
   it('clamps to the active range', () => {
     m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
       0,
       CTX,
     )
-    const wayUp = { x: far.x, y: far.y - 0.5 }
     const r = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: wayUp, pinch: true })],
+      [
+        mkHand('Right', {
+          fingers: INDEX_ONLY,
+          anchorN: { x: far.x, y: far.y - 0.5 },
+          pinch: true,
+        }),
+      ],
       16,
       CTX,
     )
@@ -189,53 +186,65 @@ describe('PINCH-PITCH', () => {
 
   it('releases when the pinch opens past the exit threshold', () => {
     m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
       0,
       CTX,
     )
     const open = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: far, pinch: false })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: false })],
       16,
       CTX,
     )
     expect(open.pitchValue).toBeNull()
   })
+})
 
-  it('is suppressed while a fingertip is inside the platter annulus (priority)', () => {
+describe('disambiguation', () => {
+  it('an open hand in the annulus scratches; a pinch cannot claim it', () => {
     const inAnn = nAt(80)
     const r = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn, pinch: true })],
+      [mkHand('Right', { fingers: OPEN, anchorN: inAnn })],
       0,
       CTX,
     )
-    m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn, pinch: true })],
+    const r2 = m.update(
+      [mkHand('Right', { fingers: OPEN, anchorN: nAt(80, 18) })],
       16,
       CTX,
     )
+    expect(r.scratchRate).not.toBeNull()
+    expect(r2.pitchValue).toBeNull()
+  })
+
+  it('a fingertip in the annulus blocks the aux-hand gestures entirely', () => {
+    // index-only + pinch, held in the annulus: not an open hand -> not SCRATCH,
+    // and the annulus priority rule suppresses the pinch -> nothing fires
+    const inAnn = nAt(80)
+    const r = m.update(
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn, pinch: true })],
+      0,
+      CTX,
+    )
     const r2 = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn, pinch: true })],
-      32,
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn, pinch: true })],
+      16,
       CTX,
     )
     expect(r.pitchValue).toBeNull()
-    expect(r2.scratchRate).not.toBeNull() // SCRATCH claimed it instead
+    expect(r.scratchRate).toBeNull()
+    expect(r2.pitchValue).toBeNull()
+    expect(r2.scratchRate).toBeNull()
   })
 })
 
 describe('dwell gestures', () => {
-  const far = nAt(240)
+  const far = nAt(260)
 
-  it('PALM-HOLD toggles the motor after ~700 ms, exactly once', () => {
-    // 700 ms / 50 ms = 14 frames to reach threshold; fire on the frame that crosses
+  it('FIST-HOLD toggles the motor after ~700 ms, exactly once', () => {
     let fired = 0
     let r
     for (let i = 0; i < 20; i++) {
-      r = m.update(
-        [mkHand('Right', { fingers: PALM, indexTipN: far })],
-        i * 50,
-        CTX,
-      )
+      r = m.update([mkHand('Right', { fingers: FIST, anchorN: far })], i * 50, CTX)
       if (r.motorToggle) fired++
     }
     expect(fired).toBe(1) // latched — not 30 times
@@ -247,25 +256,24 @@ describe('dwell gestures', () => {
     const run = (fingers: Fingers, from: number, n: number) => {
       for (let i = 0; i < n; i++) {
         const r = m.update(
-          [mkHand('Right', { fingers, indexTipN: far })],
+          [mkHand('Right', { fingers, anchorN: far })],
           from + i * 50,
           CTX,
         )
         if (r.motorToggle) fired++
       }
     }
-    run(PALM, 0, 20) // fires once
-    run(FIST, 1000, 4) // break the pose (also clears cooldown window)
-    run(PALM, 1300, 20) // fires again
+    run(FIST, 0, 20) // fires once
+    run(OPEN, 1000, 4) // break the pose
+    run(FIST, 1300, 20) // fires again
     expect(fired).toBe(2)
   })
 
   it('motion resets the dwell timer — a moving hand never triggers it', () => {
     let fired = 0
     for (let i = 0; i < 30; i++) {
-      // shift the whole hand 0.05 / frame -> centroid velocity above stillness
       const r = m.update(
-        [mkHand('Right', { fingers: PALM, indexTipN: far, wristShift: 0.05 * i })],
+        [mkHand('Right', { fingers: FIST, anchorN: far, wristShift: 0.05 * i })],
         i * 50,
         CTX,
       )
@@ -275,25 +283,18 @@ describe('dwell gestures', () => {
   })
 
   it('global cooldown blocks a second latched gesture for 500 ms', () => {
-    // PALM fires around t=700; immediately switch to TWO-FINGER
+    // FIST fires at t=700; immediately switch to TWO-FINGER
     for (let i = 0; i < 16; i++) {
-      m.update([mkHand('Right', { fingers: PALM, indexTipN: far })], i * 50, CTX)
+      m.update([mkHand('Right', { fingers: FIST, anchorN: far })], i * 50, CTX)
     }
-    // now hold TWO-FINGER starting right after; if cooldown works it can't
-    // complete a 700 ms dwell until >=500 ms have passed first
     let firstRpmAt = -1
     for (let i = 0; i < 40; i++) {
       const t = 800 + i * 50
-      const r = m.update(
-        [mkHand('Right', { fingers: TWO, indexTipN: far })],
-        t,
-        CTX,
-      )
+      const r = m.update([mkHand('Right', { fingers: TWO, anchorN: far })], t, CTX)
       if (r.rpmToggle && firstRpmAt < 0) firstRpmAt = t
     }
-    // PALM fires at t=700 -> cooldown to 1200 -> TWO-FINGER can't begin its
-    // 700 ms dwell until t=1200, completing at exactly t=1900. Without the
-    // cooldown a naive dwell would have completed near t=1500.
+    // fire at t=700 -> cooldown to 1200 -> TWO-FINGER's 700 ms dwell can't start
+    // arming until t=1200, completing at exactly t=1900.
     expect(firstRpmAt).toBe(1900)
   })
 })
@@ -301,22 +302,24 @@ describe('dwell gestures', () => {
 describe('two-hand assignment (PRD §6.4.4)', () => {
   it('the hand nearer the platter centre scratches; the other pitches', () => {
     const near = nAt(70) // in annulus
-    const far = nAt(235) // outside
+    const far = nAt(280) // outside
 
-    // frame 1
     m.update(
       [
-        mkHand('Right', { fingers: INDEX_ONLY, indexTipN: near }),
-        mkHand('Left', { fingers: INDEX_ONLY, indexTipN: far, pinch: true }),
+        mkHand('Right', { fingers: OPEN, anchorN: near }),
+        mkHand('Left', { fingers: INDEX_ONLY, anchorN: far, pinch: true }),
       ],
       0,
       CTX,
     )
-    // frame 2 — scratch engaged, move the near hand a touch to make rate != 0
     const r = m.update(
       [
-        mkHand('Right', { fingers: INDEX_ONLY, indexTipN: nAt(70, 20) }),
-        mkHand('Left', { fingers: INDEX_ONLY, indexTipN: { x: far.x, y: far.y - 0.05 }, pinch: true }),
+        mkHand('Right', { fingers: OPEN, anchorN: nAt(70, 20) }),
+        mkHand('Left', {
+          fingers: INDEX_ONLY,
+          anchorN: { x: far.x, y: far.y - 0.05 },
+          pinch: true,
+        }),
       ],
       16,
       CTX,
@@ -324,18 +327,16 @@ describe('two-hand assignment (PRD §6.4.4)', () => {
 
     expect(r.scratchRate).not.toBeNull()
     expect(r.pitchValue).not.toBeNull()
-    const right = r.hands.find((h) => h.handedness === 'Right')!
-    const left = r.hands.find((h) => h.handedness === 'Left')!
-    expect(right.owns).toBe('scratch')
-    expect(left.owns).toBe('pitch')
+    expect(r.hands.find((h) => h.handedness === 'Right')!.owns).toBe('scratch')
+    expect(r.hands.find((h) => h.handedness === 'Left')!.owns).toBe('pitch')
   })
 })
 
 describe('no hands', () => {
   it('releases held controls and leaves the fader alone', () => {
     const inAnn = nAt(90)
-    m.update([mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn })], 0, CTX)
-    m.update([mkHand('Right', { fingers: INDEX_ONLY, indexTipN: inAnn })], 16, CTX)
+    m.update([mkHand('Right', { fingers: OPEN, anchorN: inAnn })], 0, CTX)
+    m.update([mkHand('Right', { fingers: OPEN, anchorN: nAt(90, 15) })], 16, CTX)
     const gone = m.update([], 32, CTX)
     expect(gone.scratchRate).toBeNull()
     expect(gone.pitchValue).toBeNull()
