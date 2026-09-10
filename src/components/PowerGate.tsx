@@ -45,9 +45,11 @@ export function PowerGate() {
         <p className="tt-powergate__sub">Power on the deck</p>
 
         <p className="tt-powergate__body">
-          Play a record with your hands in front of the webcam — every control
-          also works with the mouse. Nothing is uploaded; audio and camera stay
-          on your machine.
+          Hey&nbsp;DJ — scratch your favourite tracks with hand gestures in
+          front of the webcam. Upload your own or pick one from the library.
+        </p>
+        <p className="tt-powergate__note">
+          Nothing is uploaded — your audio and camera feed stay on your machine.
         </p>
 
         <button
