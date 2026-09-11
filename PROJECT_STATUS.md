@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 32 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 33 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -318,31 +318,42 @@ stack clipped/overlapping the disc and the header text cut off. New
   1440×860 is byte-for-byte the same control sizes/positions as before this
   change.
 
-### Transport stack: START moved above 33/45, all three groups now flush-width
+### Transport stack: START above 33/45, all three groups flush-width — at the
+### SMALLER (native) size, not the bigger pitch-rail one
 Both on desktop and mobile. `Deck.tsx` renders `<StartButton/><SpeedSelector/>
-<PitchFader/>` in that order now (was speed, start, pitch) — column layout on
-desktop, so this alone reordered it there; mobile just flows in DOM order too.
-- **Every group is now the same 342 px column width as the pitch rail**
-  (previously pitch was already 342 px — readout 59 + track 212 + range 59 +
-  2×6 gap — and was the odd one out; START (212×64) and the 33/45 pair
-  (2×103+8=214) were both already close to each other but ~130 px narrower).
-  `.tt-start` grew to `342 × (342 × 64 / 212)` (aspect-ratio-exact, ≈342×103);
-  `.tt-speed__btn` grew to `167×167` each (`(342 - 8px gap) / 2`). Pitch is
-  untouched. All three still go through `calc(... * var(--ctl-scale, 1))`, so
-  desktop's disc-relative scale-to-fit and mobile's `--ctl-scale: 0.74` apply
-  identically to the now-bigger START/speed.
-- Net effect: on desktop the column reads as one flush rectangle (`align-items:
-  center` was already there; it just had nothing narrower to centre before).
-  On mobile, three 342-px-wide groups no longer fit two-to-a-row, so they
-  stack as **three** equal-width rows instead of two uneven ones — taller
-  (~267 px vs ~133 px at `--ctl-scale: 0.74`), so the mobile `--disc-w`
-  height reserve went from 270 px to **400 px** (header clearance + min gap +
-  the taller stack + bottom padding) — otherwise a ~700 px-tall phone would
-  need to scroll. Re-verified at 375×812 (no scroll, disc still width-bound at
-  95vw) and 375×667 (now height-bound, disc shrinks to fit, no scroll).
-- `.tt-deck__controls`'s own bounding-box width was already 342 px before this
-  (the widest child sets a column's width) — the disc-parking/scale-to-fit
-  formulas in `.tt-deck__controls`'s desktop rules didn't need to change.
+<PitchFader/>` in that order (was speed, start, pitch) — column layout on
+desktop, so this alone reordered it there; mobile flows in DOM order too.
+
+First pass grew START/33/45 UP to the pitch rail's native 342 px (see git
+history) — **reverted**: the user called it out as too big and visibly
+softened (~62% upscale of 103 px/212 px source art past its native raster
+resolution blurs). Correct direction is the opposite one:
+- **`.tt-start` and `.tt-speed__btn` are back to their native PNG size**
+  (212×64, 103×103 — no scale beyond the usual `var(--ctl-scale, 1))`) — the
+  size reference now, always crisp.
+- **The pitch group scales DOWN to match**, via a `--pitch-scale: calc(106 /
+  171)` (= 212/342, reduced) custom property set on `.tt-pitch` and
+  multiplied into every pitch piece's `calc()` — `.tt-pitch__readout`,
+  `.tt-pitch__track` (`pitch-fader-base.png`), `.tt-pitch__range`,
+  `.tt-pitch__slider`, `.tt-pitch__detent`'s inset, the readout's font-size,
+  and `.tt-pitch`'s own `gap`. Downscaling a raster image never blurs, so
+  this direction is free of the softening problem. Pitch's native 342 px
+  total → 212 px, matching START exactly (the 33/45 pair is 214 px — 2 px
+  off, invisible).
+- **`.tt-deck__controls`'s desktop scale-to-fit divisor** (in the
+  `right`/`transform: scale(clamp(...))` parking formula) changed from the
+  old 342 px to **214 px** — it must track whichever group is actually
+  widest (the 33/45 pair now, not pitch), or the clamp undershoots and the
+  stack can reach the disc on mid-width screens.
+- **Mobile**: three ~212–214 px groups (not 342 px) fit two-to-a-row again at
+  `--ctl-scale: 0.74` (start+speed ≈327 px, pitch ≈157 px alone) — back to a
+  two-row stack, ~116 px tall (not the ~267 px three-row stack the bigger
+  version needed). The `--disc-w` height reserve came back down with it:
+  400 px → **260 px**. Re-verified at 375×812/600 (no scroll either way, disc
+  width- then height-bound as expected) and desktop 1600 px/900 px (all three
+  groups measure flush at 212–214 px; functional checks — start toggle, speed
+  switch, pitch tap-to-end both directions, range toggle — all still pass at
+  the smaller pitch size).
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random

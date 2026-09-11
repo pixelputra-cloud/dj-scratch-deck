@@ -307,18 +307,19 @@
   /* usable left gutter = the space between the viewport edge and the disc */
   --gutter: calc((100vw - var(--disc-w)) / 2);
   /* Shrink the stack (about its right edge, so it stays glued to the disc) to
-     whatever fraction of its ~342px natural width the gutter can hold — full
-     size on wide screens, down to 0.5 before it would ever reach the disc. */
+     whatever fraction of its ~214px natural width (the 33/45 pair — the
+     widest of the three, now that they're all matched) the gutter can hold —
+     full size on wide screens, down to 0.5 before it would ever reach the
+     disc. */
   transform: translateY(-50%) scale(0.82);
   transform: translateY(-50%)
-    scale(clamp(0.5, (var(--gutter) - 24px) / 342px, 1));
+    scale(clamp(0.5, (var(--gutter) - 24px) / 214px, 1));
   transform-origin: right center;
   z-index: 6;
   display: flex;
   flex-direction: column;
-  /* centre the 33/45 pair and START on the pitch rail (the widest row);
-     readout + range key sit symmetrically either side of the rail, so the
-     row's centre is the rail's centre */
+  /* centre the narrower start/pitch (212px) under the 33/45 pair (214px) —
+     a 2px difference, invisible, so the column still reads flush */
   align-items: center;
   gap: 16px;
 }
@@ -352,12 +353,13 @@
 }
 
 /* --- start / stop (face swaps between the on / off PNGs) ---
-   Sized to the same 342px column width as the pitch rail (342 * 64 / 212
-   keeps the source PNG's aspect ratio exact), so the three control groups
-   line up flush on both edges instead of pitch overhanging the others. */
+   Native PNG size — this (with the 33/45 pair) is the size reference; the
+   pitch group is scaled DOWN to match it (see --pitch-scale below), not the
+   other way around. Upscaling the start/speed art past its native raster
+   resolution is what was going soft — this keeps it crisp. */
 .tt-start {
-  width: calc(342px * var(--ctl-scale, 1));
-  height: calc(342px * 64 / 212 * var(--ctl-scale, 1));
+  width: calc(212px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
 }
 .tt-start:not(:disabled):active {
   transform: translateY(2px) scale(0.985);
@@ -369,30 +371,38 @@
   gap: 8px;
 }
 .tt-speed__btn {
-  /* two of these + the row's 8px gap = the same 342px column width as
-     start/pitch: (342 - 8) / 2 */
-  width: calc(167px * var(--ctl-scale, 1));
-  height: calc(167px * var(--ctl-scale, 1));
+  /* native size; two of these + the row's 8px gap = 214px, the column
+     width every other group now matches */
+  width: calc(103px * var(--ctl-scale, 1));
+  height: calc(103px * var(--ctl-scale, 1));
 }
 .tt-speed__btn:not(:disabled):active {
   transform: translateY(1.5px) scale(0.98);
 }
 
-/* --- pitch: LCD readout · rail · range key, one row --- */
+/* --- pitch: LCD readout · rail · range key, one row ---
+   Scaled DOWN from its native 342px total width to 212px — the same column
+   width as START (and near enough the 33/45 pair's 214px) — via
+   --pitch-scale (212 / 342), applied on top of the usual --ctl-scale so
+   mobile still shrinks everything together. */
 .tt-pitch {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  --pitch-scale: calc(106 / 171); /* = 212 / 342, reduced */
 }
 .tt-pitch__readout {
   flex: 0 0 auto;
-  width: calc(59px * var(--ctl-scale, 1));
-  height: calc(64px * var(--ctl-scale, 1));
+  width: calc(59px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
   display: grid;
   place-items: center;
   background: url('/controls/pitch-fader-lcd-readout.png') center / 100% 100%
     no-repeat;
-  font-size: max(7px, calc(10px * var(--ctl-scale, 1)));
+  font-size: max(
+    7px,
+    calc(10px * var(--pitch-scale, 1) * var(--ctl-scale, 1))
+  );
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-weight: 800;
   line-height: 1;
@@ -407,8 +417,8 @@
 .tt-pitch__track {
   position: relative;
   flex: 0 0 auto;
-  width: calc(212px * var(--ctl-scale, 1));
-  height: calc(64px * var(--ctl-scale, 1));
+  width: calc(212px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
   background: url('/controls/pitch-fader-base.png') center / contain no-repeat;
   touch-action: none;
   cursor: ew-resize;
@@ -416,8 +426,8 @@
 .tt-pitch__detent {
   position: absolute;
   left: 50%;
-  top: calc(18px * var(--ctl-scale, 1));
-  bottom: calc(18px * var(--ctl-scale, 1));
+  top: calc(18px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  bottom: calc(18px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
   width: 2px;
   transform: translateX(-50%);
   background: rgba(255, 106, 43, 0.55);
@@ -432,8 +442,8 @@
 .tt-pitch__slider {
   position: absolute;
   top: 50%;
-  width: calc(51px * var(--ctl-scale, 1));
-  height: calc(36px * var(--ctl-scale, 1));
+  width: calc(51px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  height: calc(36px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
   transform: translate(-50%, -50%);
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
@@ -444,8 +454,8 @@
 }
 .tt-pitch__range {
   flex: 0 0 auto;
-  width: calc(59px * var(--ctl-scale, 1));
-  height: calc(64px * var(--ctl-scale, 1));
+  width: calc(59px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
 }
 .tt-pitch__range:active {
   transform: translateY(1.5px) scale(0.97);
@@ -1212,10 +1222,10 @@
     overflow-y: auto; /* a short/landscape phone scrolls rather than clips */
     /* width-bound on a tall phone, height-bound on a short/landscape one, so
        the disc is always as big as it can be without starving the controls.
-       400px reserve = header clearance (96) + min gap (14) + the 3 stacked,
-       now equal-width control rows (~267 at --ctl-scale: 0.74) + bottom
-       padding (20), with a little slack. */
-    --disc-w: min(95vw, calc(100vh - 400px), 560px);
+       260px reserve = header clearance (96) + min gap (14) + the two control
+       rows (~116 at --ctl-scale: 0.74, now that start/speed are native-sized
+       and only pitch is scaled down) + bottom padding (20), with slack. */
+    --disc-w: min(95vw, calc(100vh - 260px), 560px);
   }
   .tt-platter {
     order: 1;
