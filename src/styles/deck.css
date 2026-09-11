@@ -1270,21 +1270,59 @@
     gap: 5px;
   }
 
-  /* -- side-panel handle: bigger and lit, so it reads as a tab worth
-     pressing rather than a sliver at the edge -- */
+  /* -- side panel becomes a bottom sheet --
+     Same markup, same [handle, body] DOM order as the desktop right-edge
+     drawer — just rotated: the container is bottom-anchored and a column
+     instead of right-anchored and a row, so the body (last child) ends up
+     flush against the bottom edge and the handle sits directly above it,
+     the standard bottom-sheet "grab bar at the top of the sheet" shape,
+     for free. */
+  .tt-panel {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    transform: none;
+    flex-direction: column;
+    align-items: stretch;
+    /* above the header (z-index 30) too, once expanded, so it truly reads
+       as "above every other UI feature" rather than tucked behind it */
+    z-index: 40;
+  }
   .tt-panel__handle {
-    padding: 20px 11px;
-    border-width: 1.5px;
-    border-color: var(--backlight);
-    box-shadow: -2px 0 16px -4px var(--glow);
+    align-self: stretch;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 16px;
+    border: 1.5px solid var(--backlight);
+    border-bottom: 0;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 22px -8px var(--glow);
   }
   .tt-panel__handle-label {
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
     font-size: 11px;
-    letter-spacing: 0.26em;
+    letter-spacing: 0.24em;
     color: var(--text-primary);
   }
   .tt-panel__handle-chev {
+    /* ◂ / ▸ point sideways for the desktop drawer; rotated 90° they point
+       up (closed — tap to raise the sheet) / down (open — tap to lower
+       it), with no change to the glyphs themselves */
+    display: inline-block;
+    transform: rotate(90deg);
     font-size: 13px;
     color: var(--backlight);
+  }
+  .tt-panel__body {
+    width: 100%;
+    max-width: none;
+    max-height: 75vh;
+    border: 1.5px solid var(--backlight);
+    border-bottom: 0;
+    border-top: 0;
+    border-radius: 0;
   }
 }

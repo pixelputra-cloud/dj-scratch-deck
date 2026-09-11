@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 35 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 36 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -392,16 +392,56 @@ against reference screenshots:
   (`rgba(255,255,255,0.22)`) and a faint fill (`rgba(255,255,255,0.07)`) so
   it doesn't read as flat text. Desktop's `.tt-camctl` rule is untouched.
 - **`.tt-panel__handle` (the CRATE/GESTURES tab) is bigger and lit** on
-  mobile — more padding, a `var(--backlight)` (amber) border + glow
-  (`box-shadow` using `var(--glow)`), brighter label text, and a bigger
-  chevron in the accent colour — so it reads as a pressable tab, not a thin
-  sliver at the edge. Desktop keeps the original subdued styling.
+  mobile — amber border + glow, brighter label text. *(Superseded by the
+  bottom-sheet conversion right below — the handle is now a horizontal bar,
+  not a vertical tab, but keeps this same lit treatment.)*
 - All four verified via computed geometry (375×812, 375×667 — disc
   vertically centred with symmetric top/bottom slack, camera button ~37px
-  tall, handle ~34px wide, no scroll at either height) and functional checks
-  (start/speed/pitch controls, panel-handle click-to-open); desktop measured
-  unchanged (1600×900) since none of these rules exist outside the mobile
-  media query.
+  tall, no scroll at either height) and functional checks (start/speed/pitch
+  controls); desktop measured unchanged (1600×900) since none of these rules
+  exist outside the mobile media query.
+
+### `SidePanel` becomes a bottom sheet on mobile (was the same right-edge
+### drawer as desktop, just resized)
+Same `SidePanel.tsx` markup and DOM order (`[handle, body]`) on both — only
+`deck.css`'s `@media (max-width: 700px)` block changes how `.tt-panel` is
+positioned and stacked:
+- **Desktop**: `.tt-panel { display: flex; align-items: stretch }` (row,
+  default direction) anchored `right: 0`. Because `body` is the *last* child,
+  it — not the handle — ends up flush against the container's anchored edge;
+  the handle sits immediately to its left (or alone, flush right, when the
+  body is `display: none`).
+- **Mobile**: the exact same mechanism, rotated 90° — `flex-direction:
+  column`, anchored `bottom: 0` (`top/right` cleared, `left: 0` added)
+  instead of `right: 0`. Now `body` (last child) ends up flush against the
+  *bottom* edge, and the handle sits directly *above* it — which is exactly
+  the standard bottom-sheet shape (a grab bar at the top of a sheet that
+  rises from the bottom edge), for free, with no markup or component change.
+- `.tt-panel__handle` goes from a vertical tab (`writing-mode: vertical-rl`)
+  to a full-width horizontal bar (`align-self: stretch`, horizontal text,
+  rounded top corners, amber border + glow). The chevron glyphs are
+  unchanged (◂ closed / ▸ open, still driven by `SidePanel.tsx`) but get
+  `transform: rotate(90deg)` — ◂ (west) rotated 90° CW points up (closed =
+  "tap to raise"), ▸ (east) rotated 90° CW points down (open = "tap to
+  lower") — so the same two glyphs read correctly in the new orientation.
+- `.tt-panel__body` goes full-width (`width: 100%`), `max-height: 75vh`
+  (was a fixed `300px` wide side column), flat corners (the handle above it
+  carries the rounding), amber side borders continuing the handle's frame.
+- **`.tt-panel`'s z-index bumped to 40 on mobile** (was 20, inherited from
+  desktop) — above `.tt-app__header`'s 30 — so an expanded sheet genuinely
+  overlays every other UI feature, including the header, not just the deck
+  behind it.
+- The existing `@media (max-width: 820px)` / `(max-height: 620px)` rules
+  for `.tt-panel__body` (from earlier in the file, predating the 700px
+  breakpoint) still apply in the 700–820px tablet range, where the panel
+  stays a side drawer; below 700px this new block's later-declared
+  properties win.
+- Verified: collapsed handle is a lit bar flush with the bottom edge;
+  tapping it raises the sheet (tabs, crate list, gesture HUD all render,
+  content scrolls); tapping outside still collapses it (the existing
+  click-outside handler in `SidePanel.tsx` needed no changes); tab switching
+  works; desktop geometry unchanged (1600×900: body still flush right,
+  handle to its left, exactly as before).
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random
