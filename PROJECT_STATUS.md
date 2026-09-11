@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 28 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 30 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -54,6 +54,8 @@ Vendored offline (no runtime CDN, per PRD §4.3):
   synthesised**, see pivots).
 - `public/controls/*.png` (11 files) — the transport-control button art
   (source copies also kept in `assets/`).
+- `public/images/powergate-bg.jpg` — the power-gate background photo
+  (source `assets/DJarena.png`, re-encoded to JPEG on the way in).
 
 Every runtime reference to a `public/` file goes through **`src/lib/asset.ts`**
 (`asset(p)` → `import.meta.env.BASE_URL + p`) so the bundle works both at a
@@ -240,6 +242,36 @@ column. **Current:**
   `CameraControl`** (the sidebar `CameraPanel` is gone).
 - **Glass mode:** `.tt-app[data-camera='on']` makes the platter metal and the
   vinyl body semi-transparent so the feed reads through the disc.
+
+### Power gate — real photo background, not a CSS-drawn scene
+`PowerGate.tsx` / the `.tt-powergate*` rules in `deck.css`. Went through a
+`/frontend-design` pass (elevate the wordmark, blurred spinning disc behind
+the card) and then a full swap once the user supplied art:
+- **Background is now a photo** — `assets/DJarena.png` (a DJ-arena
+  illustration, user-supplied), vendored as `public/images/powergate-bg.jpg`
+  (re-encoded to JPEG q84, 2.0 MB → 264 KB). `.tt-powergate` layers a
+  top-to-bottom darkening `linear-gradient` over `url('/images/powergate-bg.jpg')`
+  at `background-size: cover`; since the host is `position: fixed; inset: 0`,
+  that always fills the viewport at any width, cropping evenly — no JS/media
+  queries needed for the scaling itself.
+- **The old CSS-drawn "blurred spinning record"** (`.tt-powergate__disc` +
+  `-label` + `-sheen`, plus its `tt-pg-spin` / `tt-pg-disc-in` keyframes) is
+  **gone** — replaced by the photo. A single `tt-pg-photo-in` opacity fade
+  plays on `.tt-powergate` itself on mount; `.tt-powergate__grain` (noise) and
+  `.tt-powergate__vignette` (edge darkening) are unchanged and still work over
+  the photo.
+- **The nameplate card is frosted glass** (`backdrop-filter: blur(28px)
+  saturate(1.25)`, up from 18px, over a near-opaque dark gradient — `rgba(17,
+  17, 21, 0.88)` → `rgba(8, 8, 10, 0.95)`) so the busy, colourful photo
+  resolves into a soft wash behind the text rather than staying legible there
+  — that blur *is* the point, not a bug to chase.
+- Verified at desktop and mobile (375px) widths — `cover` recenters cleanly at
+  both; no console errors. (One false alarm during testing: a screenshot taken
+  immediately after an emulated-viewport resize showed the panel content
+  missing even though computed styles were all correct (opacity 1, background
+  present) — a **capture-timing artifact** of the in-app test browser, not a
+  real bug; it rendered correctly on the next screenshot a couple of seconds
+  later.)
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random

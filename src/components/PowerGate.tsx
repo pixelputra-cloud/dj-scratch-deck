@@ -4,8 +4,9 @@ import { useDeckStore } from '../state/useDeckStore'
 
 /**
  * "Tap to power on" click gate (PRD §4.3). A hand gesture is not a user-input
- * event, so the AudioContext can only be resumed from a real click. Staged as
- * a darkened booth — one record turning in the blur behind a lit nameplate.
+ * event, so the AudioContext can only be resumed from a real click. Staged
+ * over a full-bleed DJ-arena photo (public/images/powergate-bg.jpg) with a
+ * frosted-glass nameplate on top.
  */
 export function PowerGate() {
   const powered = useDeckStore((s) => s.powered)
@@ -27,10 +28,6 @@ export function PowerGate() {
 
   return (
     <div className="tt-powergate" role="dialog" aria-label="Power on the deck">
-      <div className="tt-powergate__disc" aria-hidden>
-        <span className="tt-powergate__disc-label" />
-        <span className="tt-powergate__disc-sheen" />
-      </div>
       <div className="tt-powergate__grain" aria-hidden />
       <div className="tt-powergate__vignette" aria-hidden />
 
