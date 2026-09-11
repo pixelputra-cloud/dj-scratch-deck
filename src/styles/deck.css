@@ -351,10 +351,13 @@
   cursor: not-allowed;
 }
 
-/* --- start / stop (face swaps between the on / off PNGs) --- */
+/* --- start / stop (face swaps between the on / off PNGs) ---
+   Sized to the same 342px column width as the pitch rail (342 * 64 / 212
+   keeps the source PNG's aspect ratio exact), so the three control groups
+   line up flush on both edges instead of pitch overhanging the others. */
 .tt-start {
-  width: calc(212px * var(--ctl-scale, 1));
-  height: calc(64px * var(--ctl-scale, 1));
+  width: calc(342px * var(--ctl-scale, 1));
+  height: calc(342px * 64 / 212 * var(--ctl-scale, 1));
 }
 .tt-start:not(:disabled):active {
   transform: translateY(2px) scale(0.985);
@@ -366,8 +369,10 @@
   gap: 8px;
 }
 .tt-speed__btn {
-  width: calc(103px * var(--ctl-scale, 1));
-  height: calc(103px * var(--ctl-scale, 1));
+  /* two of these + the row's 8px gap = the same 342px column width as
+     start/pitch: (342 - 8) / 2 */
+  width: calc(167px * var(--ctl-scale, 1));
+  height: calc(167px * var(--ctl-scale, 1));
 }
 .tt-speed__btn:not(:disabled):active {
   transform: translateY(1.5px) scale(0.98);
@@ -1206,8 +1211,11 @@
     padding: 96px 14px 20px;
     overflow-y: auto; /* a short/landscape phone scrolls rather than clips */
     /* width-bound on a tall phone, height-bound on a short/landscape one, so
-       the disc is always as big as it can be without starving the controls */
-    --disc-w: min(95vw, calc(100vh - 270px), 560px);
+       the disc is always as big as it can be without starving the controls.
+       400px reserve = header clearance (96) + min gap (14) + the 3 stacked,
+       now equal-width control rows (~267 at --ctl-scale: 0.74) + bottom
+       padding (20), with a little slack. */
+    --disc-w: min(95vw, calc(100vh - 400px), 560px);
   }
   .tt-platter {
     order: 1;

@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 31 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 32 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -283,7 +283,7 @@ stack clipped/overlapping the disc and the header text cut off. New
   left-stack layout to a plain flex column**: disc first, controls after,
   reordered visually with `order` (DOM order is unchanged — controls still
   come first in `Deck.tsx`, for the desktop layout). `--disc-w` becomes
-  `min(95vw, calc(100vh - 270px), 560px)` — width-bound on a tall phone,
+  `min(95vw, calc(100vh - 400px), 560px)` — width-bound on a tall phone,
   height-bound on a short one — so the disc is always as big as it can be
   without starving the controls under it. `.tt-deck` keeps `overflow-y: auto`
   as a safety net for anything shorter than the formula accounts for.
@@ -295,8 +295,9 @@ stack clipped/overlapping the disc and the header text cut off. New
   `.tt-pitch__readout`, `.tt-pitch__range`, `.tt-pitch__slider`, and the
   detent's `top`/`bottom`) — `--ctl-scale` defaults to `1` (unset), so desktop
   is pixel-identical to before; mobile sets `--ctl-scale: 0.74` on
-  `.tt-deck__controls` and everything under it shrinks for real, in flow
-  (33/45 + START wrap onto one row, the pitch group onto a second).
+  `.tt-deck__controls` and everything under it shrinks for real, in flow.
+  (Superseded below — the three groups are now equal-width and each wraps
+  onto its own row.)
 - **Header** (`.tt-app__header`) wraps onto a second row (`flex-wrap: wrap`)
   and shrinks; the "no disc" / track-title span (now `.tt-app__track` — added
   the class) truncates with an ellipsis instead of overflowing. The camera
@@ -316,6 +317,32 @@ stack clipped/overlapping the disc and the header text cut off. New
   formula degrades gracefully, nothing clips or overlaps, and desktop at
   1440×860 is byte-for-byte the same control sizes/positions as before this
   change.
+
+### Transport stack: START moved above 33/45, all three groups now flush-width
+Both on desktop and mobile. `Deck.tsx` renders `<StartButton/><SpeedSelector/>
+<PitchFader/>` in that order now (was speed, start, pitch) — column layout on
+desktop, so this alone reordered it there; mobile just flows in DOM order too.
+- **Every group is now the same 342 px column width as the pitch rail**
+  (previously pitch was already 342 px — readout 59 + track 212 + range 59 +
+  2×6 gap — and was the odd one out; START (212×64) and the 33/45 pair
+  (2×103+8=214) were both already close to each other but ~130 px narrower).
+  `.tt-start` grew to `342 × (342 × 64 / 212)` (aspect-ratio-exact, ≈342×103);
+  `.tt-speed__btn` grew to `167×167` each (`(342 - 8px gap) / 2`). Pitch is
+  untouched. All three still go through `calc(... * var(--ctl-scale, 1))`, so
+  desktop's disc-relative scale-to-fit and mobile's `--ctl-scale: 0.74` apply
+  identically to the now-bigger START/speed.
+- Net effect: on desktop the column reads as one flush rectangle (`align-items:
+  center` was already there; it just had nothing narrower to centre before).
+  On mobile, three 342-px-wide groups no longer fit two-to-a-row, so they
+  stack as **three** equal-width rows instead of two uneven ones — taller
+  (~267 px vs ~133 px at `--ctl-scale: 0.74`), so the mobile `--disc-w`
+  height reserve went from 270 px to **400 px** (header clearance + min gap +
+  the taller stack + bottom padding) — otherwise a ~700 px-tall phone would
+  need to scroll. Re-verified at 375×812 (no scroll, disc still width-bound at
+  95vw) and 375×667 (now height-bound, disc shrinks to fit, no scroll).
+- `.tt-deck__controls`'s own bounding-box width was already 342 px before this
+  (the widest child sets a column's width) — the disc-parking/scale-to-fit
+  formulas in `.tt-deck__controls`'s desktop rules didn't need to change.
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random

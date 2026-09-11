@@ -38,10 +38,13 @@ export function Deck() {
 
   return (
     <div className="tt-deck">
-      {/* analog transport stack — sits immediately left of the disc */}
+      {/* analog transport stack — sits immediately left of the disc (below it
+          on mobile). Start/stop reads first, then speed, then pitch — and
+          all three are the same width (see deck.css) so the column lines up
+          flush on both edges. */}
       <div className="tt-deck__controls">
-        <SpeedSelector />
         <StartButton />
+        <SpeedSelector />
         <PitchFader />
       </div>
 
