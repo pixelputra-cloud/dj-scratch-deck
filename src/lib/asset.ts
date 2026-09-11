@@ -7,8 +7,8 @@
  * literals in JS/TS. Every runtime reference to a `public/` file (fetch URLs,
  * <img src>, worklet/model paths) must go through here.
  *
- *   asset('audio/vinyl-noise.wav') // -> '/dj-scratch-deck/audio/vinyl-noise.wav'
- *   asset('/models/hand_landmarker.task') // leading slash is fine too
+ *   asset('models/hand_landmarker.task') // -> '/dj-scratch-deck/models/hand_landmarker.task'
+ *   asset('/controls/start-stop-on.png') // leading slash is fine too
  */
 export function asset(path: string): string {
   // BASE_URL always ends with '/'

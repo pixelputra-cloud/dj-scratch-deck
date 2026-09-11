@@ -2,9 +2,8 @@
  * TurntableEngine.ts — owns the AudioContext, the node graph, track
  * loading/decoding and the bridge to the worklet.
  *
- * Graph (PRD §7.1):
+ * Graph:
  *   TurntableWorkletNode -> deckGain -> analyser -> destination
- *   vinylNoiseSource     -> noiseGain (scaled by |rate|) ----^
  *
  * The engine is instantiable (PRD §14.3 leaves room for a second deck); nothing
  * here is a singleton or a module global.
@@ -15,7 +14,6 @@ import {
   RATE_SMOOTHING_TAU,
   RATE_SMOOTHING_TAU_SCRATCH,
 } from '../lib/constants'
-import { asset } from '../lib/asset'
 import { clamp } from '../lib/math'
 import type { DecodedTrack, Track } from '../tracks/types'
 import {
@@ -52,16 +50,12 @@ export class TurntableEngine {
   private worklet: AudioWorkletNode | null = null
   private deckGain: GainNode
   private analyser: AnalyserNode
-  private noiseGain: GainNode
-  private noiseSource: AudioBufferSourceNode | null = null
-  private noiseBuffer: AudioBuffer | null = null
 
   private moduleAdded = false
   private positionListeners = new Set<(r: PositionReport) => void>()
   private loadedListeners = new Set<(durationSamples: number) => void>()
 
   private _lengthSamples = 0
-  private _noiseEnabled = true
 
   constructor() {
     this.ctx = new AudioContext({ latencyHint: 'interactive' })
@@ -72,12 +66,8 @@ export class TurntableEngine {
     this.analyser = this.ctx.createAnalyser()
     this.analyser.fftSize = 2048
 
-    this.noiseGain = this.ctx.createGain()
-    this.noiseGain.gain.value = 0
-
     this.deckGain.connect(this.analyser)
     this.analyser.connect(this.ctx.destination)
-    this.noiseGain.connect(this.deckGain)
   }
 
   // ---- lifecycle ---------------------------------------------------------
@@ -102,7 +92,6 @@ export class TurntableEngine {
       this.moduleAdded = true
     }
     if (!this.worklet) this.buildWorklet()
-    if (this._noiseEnabled) this.startNoise()
   }
 
   private buildWorklet(): void {
@@ -186,16 +175,6 @@ export class TurntableEngine {
     if (!p) return
     const tau = scratching ? RATE_SMOOTHING_TAU_SCRATCH : RATE_SMOOTHING_TAU
     p.setTargetAtTime(rate, this.ctx.currentTime, tau)
-
-    if (this._noiseEnabled) {
-      // surface noise pitches and swells with the scratch (PRD §7.1)
-      const target = 0.02 + clamp(Math.abs(rate), 0, 4) * 0.06
-      this.noiseGain.gain.setTargetAtTime(
-        target,
-        this.ctx.currentTime,
-        RATE_SMOOTHING_TAU,
-      )
-    }
   }
 
   setLoop(loop: boolean): void {
@@ -220,36 +199,6 @@ export class TurntableEngine {
     )
   }
 
-  // ---- vinyl noise ------------------------------------------------
-
-  setNoiseEnabled(on: boolean): void {
-    this._noiseEnabled = on
-    if (!on) {
-      this.noiseGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05)
-    } else if (this.powered && !this.noiseSource) {
-      this.startNoise()
-    }
-  }
-
-  private async startNoise(): Promise<void> {
-    if (this.noiseSource) return
-    try {
-      if (!this.noiseBuffer) {
-        const res = await fetch(asset('audio/vinyl-noise.wav'))
-        if (!res.ok) return
-        this.noiseBuffer = await this.ctx.decodeAudioData(await res.arrayBuffer())
-      }
-      const src = this.ctx.createBufferSource()
-      src.buffer = this.noiseBuffer
-      src.loop = true
-      src.connect(this.noiseGain)
-      src.start()
-      this.noiseSource = src
-    } catch {
-      /* noise is cosmetic — never let it break audio */
-    }
-  }
-
   // ---- observers -----------------------------------------------
 
   onPosition(cb: (r: PositionReport) => void): () => void {
@@ -271,13 +220,7 @@ export class TurntableEngine {
   async dispose(): Promise<void> {
     this.positionListeners.clear()
     this.loadedListeners.clear()
-    try {
-      this.noiseSource?.stop()
-    } catch {
-      /* already stopped */
-    }
     this.worklet?.disconnect()
-    this.noiseGain.disconnect()
     this.deckGain.disconnect()
     this.analyser.disconnect()
     if (this.ctx.state !== 'closed') await this.ctx.close()

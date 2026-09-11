@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 36 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 37 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -50,8 +50,8 @@ Vendored offline (no runtime CDN, per PRD §4.3):
   NUL bytes exactly as Google's CDN serves it** — not corruption, MediaPipe
   loads it fine.)
 - `public/wasm/` — the `tasks-vision` WASM fileset, copied from the npm package.
-- `public/audio/*.wav` — 6 crate loops + `vinyl-noise.wav` (**procedurally
-  synthesised**, see pivots).
+- `public/audio/*.wav` — 6 crate loops (**procedurally synthesised**, see
+  pivots).
 - `public/controls/*.png` (11 files) — the transport-control button art
   (source copies also kept in `assets/`).
 - `public/images/powergate-bg.jpg` — the power-gate background photo
@@ -125,8 +125,8 @@ control.
   `setTargetAtTime(..., 0.015)` — no zipper noise.
 - Negative rate = clean reverse. Loop-at-bounds by default (toggle in the store).
 - `TurntableEngine`: fetch → `decodeAudioData` → zero-copy transfer of channel
-  `ArrayBuffer`s into the worklet; 15-minute memory guard; vinyl-noise layer
-  gain-modulated by `|rate|`.
+  `ArrayBuffer`s into the worklet; 15-minute memory guard. (A vinyl-surface-
+  noise ambience layer was tried and **removed** — see pivots.)
 - `stepPlatter` — one pure function, unit-tested: spin-up torque, power-off
   pitch drop, 33↔45 ramp, pitch scales the target, hand overrides incl. reverse.
 - **Power gate** click to resume the `AudioContext` (autoplay policy).
@@ -180,6 +180,26 @@ PRD §4.2 wanted worker inference. `@mediapipe/tasks-vision`'s WASM loader does
 not initialise reliably inside a `{ type: 'module' }` worker; a working tracker
 beats a lower-latency broken one. `handTracker.worker.ts` is kept for a later
 pass. `detectForVideo(video, ts)` runs per rAF (~10–25 ms, can hitch a frame).
+
+### Vinyl surface-noise ambience layer — removed entirely
+PRD §7.1's "vinyl noise" idea (a looping surface-hiss bed mixed under
+playback, swelling with scratch speed) was built (`TurntableEngine`: a
+`noiseGain`/`noiseSource`/`noiseBuffer` trio, `startNoise()`,
+`setNoiseEnabled()`, `public/audio/vinyl-noise.wav`) but had a bug the user
+caught by ear: its gain formula, `0.02 + clamp(|rate|, 0, 4) * 0.06`, had no
+zero floor — even at complete rest (motor off, no track, no interaction) it
+sat at gain `0.02`. Worse, `powerOn()` started the noise loop unconditionally
+the instant the deck powered on, and `setNoiseEnabled(false)` — the only way
+to mute it — was **never called from anywhere in the UI**, so there was no
+way for a user to turn it off. Net effect: a constant, un-silenceable
+background hiss from the moment you hit POWER, which read as a stuck/broken
+audio effect rather than ambience. Removed rather than patched — deleted
+`noiseGain`/`noiseSource`/`noiseBuffer`, `startNoise()`,
+`setNoiseEnabled()`, the `powerOn()`/`setRate()` calls into them, the
+`asset('audio/vinyl-noise.wav')` fetch, and the file itself. If a surface-
+noise layer is wanted back, it needs a genuine zero floor at rest and either
+gate on `motorOn`/scratching or expose a real UI toggle — don't just restore
+this version.
 
 ### Bundled crate = **procedural placeholders**, not curated CC tracks
 PRD §8.1 wants 6 licence-verified CC0/CC-BY tracks from FMA/ccMixter/Pixabay.
@@ -498,8 +518,8 @@ positioned and stacked:
   automatic, so `getUserMedia` works for visitors.
 - `vite.config.ts` `base: process.env.DEPLOY_BASE || '/'` — local dev/build stay
   at root, CI builds for the project sub-path. All the `public/` runtime refs
-  (worklet URL, MediaPipe model + WASM base, `vinyl-noise.wav` fetch, control
-  `<img>` srcs, `manifest.json` track files) now resolve through `asset()`; CSS
+  (worklet URL, MediaPipe model + WASM base, control `<img>` srcs,
+  `manifest.json` track files) now resolve through `asset()`; CSS
   `url()` / HTML hrefs Vite rebases itself. No tests reference asset paths.
 - To ship a change: `git push`. To point at a different host/path: set
   `DEPLOY_BASE` (or leave default `/` for a root deploy on Netlify/Vercel).
@@ -516,8 +536,8 @@ Appendix-A constants; static build, no backend, no accounts, vendored model/WASM
 
 - **Phase 4** — real licence-verified crate; waveform overview if wanted back;
   attribution credits UI.
-- **Phase 5** — vinyl-noise level-up, onboarding overlay teaching the gestures,
-  keyboard shortcuts, accessibility pass, theme exploration via `tokens.css`.
+- **Phase 5** — onboarding overlay teaching the gestures, keyboard shortcuts,
+  accessibility pass, theme exploration via `tokens.css`.
 - **Track import beyond local files** — see the conversation analysis
   (persistence via IndexedDB/OPFS, URL paste, Jamendo).
 - **Real "does it feel right" gesture testing** — needs Chrome + a webcam;

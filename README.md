@@ -95,7 +95,7 @@ sub-path or a domain root.
 |---|---|---|
 | `public/models/hand_landmarker.task` | MediaPipe hand model (~7.8 MB) | `storage.googleapis.com/mediapipe-models/hand_landmarker/.../float16/1` |
 | `public/wasm/` | `@mediapipe/tasks-vision` v1.0.1 WASM fileset | copied from the npm package |
-| `public/audio/*.wav` | 6 crate loops + `vinyl-noise.wav` | **procedurally synthesized**, see below |
+| `public/audio/*.wav` | 6 crate loops | **procedurally synthesized**, see below |
 
 ### About the bundled crate
 
@@ -124,7 +124,7 @@ node scripts/make_loops.mjs
 | 2 · The deck, visually | ✅ big centred platter, vinyl, machined strobe/marker ring, PNG-faced transport stack, pitch detent; rotation locked to audio; mouse scratch. Redesigned since the PRD: no chassis/tonearm/spindle, camera feed is the full-page background |
 | 3 · Gesture control | ✅ MediaPipe on the main thread, landmark overlay, all four gestures (open-hand SCRATCH, PINCH-PITCH, FIST-HOLD start/stop, TWO-FINGER-HOLD speed), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass wants real Chrome + a webcam.** |
 | 4 · Crate & uploads | 🟡 crate drawer, manifest, drag-a-card-onto-the-disc, local file drop all work; **bundled tracks are procedural placeholders** |
-| 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); vinyl-noise layer wired but understated |
+| 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); onboarding/keyboard/a11y pass still open |
 
 ## Browser targets
 
