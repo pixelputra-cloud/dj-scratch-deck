@@ -353,8 +353,8 @@
 
 /* --- start / stop (face swaps between the on / off PNGs) --- */
 .tt-start {
-  width: 212px;
-  height: 64px;
+  width: calc(212px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
 }
 .tt-start:not(:disabled):active {
   transform: translateY(2px) scale(0.985);
@@ -366,8 +366,8 @@
   gap: 8px;
 }
 .tt-speed__btn {
-  width: 103px;
-  height: 103px;
+  width: calc(103px * var(--ctl-scale, 1));
+  height: calc(103px * var(--ctl-scale, 1));
 }
 .tt-speed__btn:not(:disabled):active {
   transform: translateY(1.5px) scale(0.98);
@@ -381,13 +381,16 @@
 }
 .tt-pitch__readout {
   flex: 0 0 auto;
-  width: 59px;
-  height: 64px;
+  width: calc(59px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
   display: grid;
   place-items: center;
   background: url('/controls/pitch-fader-lcd-readout.png') center / 100% 100%
     no-repeat;
-  font: 800 10px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: max(7px, calc(10px * var(--ctl-scale, 1)));
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 800;
+  line-height: 1;
   letter-spacing: 0;
   color: var(--analog-lcd-ink);
   text-shadow: 0 0 6px rgba(255, 138, 61, 0.6);
@@ -399,8 +402,8 @@
 .tt-pitch__track {
   position: relative;
   flex: 0 0 auto;
-  width: 212px;
-  height: 64px;
+  width: calc(212px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
   background: url('/controls/pitch-fader-base.png') center / contain no-repeat;
   touch-action: none;
   cursor: ew-resize;
@@ -408,8 +411,8 @@
 .tt-pitch__detent {
   position: absolute;
   left: 50%;
-  top: 18px;
-  bottom: 18px;
+  top: calc(18px * var(--ctl-scale, 1));
+  bottom: calc(18px * var(--ctl-scale, 1));
   width: 2px;
   transform: translateX(-50%);
   background: rgba(255, 106, 43, 0.55);
@@ -424,8 +427,8 @@
 .tt-pitch__slider {
   position: absolute;
   top: 50%;
-  width: 51px;
-  height: 36px;
+  width: calc(51px * var(--ctl-scale, 1));
+  height: calc(36px * var(--ctl-scale, 1));
   transform: translate(-50%, -50%);
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
@@ -436,8 +439,8 @@
 }
 .tt-pitch__range {
   flex: 0 0 auto;
-  width: 59px;
-  height: 64px;
+  width: calc(59px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
 }
 .tt-pitch__range:active {
   transform: translateY(1.5px) scale(0.97);
@@ -462,6 +465,9 @@
 .tt-camctl:disabled {
   opacity: 0.6;
   cursor: default;
+}
+.tt-camctl__label-short {
+  display: none;
 }
 .tt-camctl__dot {
   width: 8px;
@@ -1125,7 +1131,7 @@
   }
 }
 
-/* ===================== responsive fallback ===================== */
+/* ===================== responsive / mobile ===================== */
 
 @media (max-width: 820px) {
   .tt-panel__body {
@@ -1136,5 +1142,100 @@
 @media (max-height: 620px) {
   .tt-panel__body {
     max-height: 82vh;
+  }
+}
+
+@media (max-width: 700px) {
+  /* -- header: wraps to a second row and shrinks; nothing gets clipped -- */
+  .tt-app__header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .tt-app__brand {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    gap: 8px;
+  }
+  .tt-app__logo {
+    width: 11px;
+    height: 11px;
+  }
+  .tt-app__status {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .tt-app__track {
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tt-app__loop {
+    padding: 4px 0; /* a bigger tap target around the checkbox + label */
+  }
+  .tt-camctl {
+    padding: 6px 10px;
+    font-size: 10px;
+    gap: 6px;
+  }
+  /* a short label swaps in so the button never clips (see CameraControl.tsx) */
+  .tt-camctl__label-full {
+    display: none;
+  }
+  .tt-camctl__label-short {
+    display: inline;
+  }
+  .tt-camctl__diag {
+    width: max-content;
+    max-width: calc(100vw - 24px);
+  }
+
+  /* -- deck: the disc takes the space; the transport stack moves under it,
+     reflowed (not the desktop float-beside-the-disc, scale-to-fit version) -- */
+  .tt-deck {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 96px 14px 20px;
+    overflow-y: auto; /* a short/landscape phone scrolls rather than clips */
+    /* width-bound on a tall phone, height-bound on a short/landscape one, so
+       the disc is always as big as it can be without starving the controls */
+    --disc-w: min(95vw, calc(100vh - 270px), 560px);
+  }
+  .tt-platter {
+    order: 1;
+    flex: 0 0 auto;
+  }
+  .tt-deck__controls {
+    order: 2;
+    position: static;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px 14px;
+    width: 100%;
+    max-width: 380px;
+    /* pin to the bottom of the stage on a tall phone, where the disc (capped
+       by width, not height) doesn't reach all the way down; on a short one
+       there's little/no free space and this collapses to the plain gap */
+    margin-top: auto;
+    /* real (flow-based) sizing at mobile, vs. the desktop stack's transform:
+       scale() — see the --ctl-scale-driven width/height on every control */
+    --ctl-scale: 0.74;
+  }
+  .tt-speed {
+    gap: 6px;
+  }
+  .tt-pitch {
+    gap: 5px;
   }
 }

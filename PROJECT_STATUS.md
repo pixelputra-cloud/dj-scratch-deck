@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 30 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 31 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -272,6 +272,50 @@ the card) and then a full swap once the user supplied art:
   present) — a **capture-timing artifact** of the in-app test browser, not a
   real bug; it rendered correctly on the next screenshot a couple of seconds
   later.)
+
+### Mobile layout — the deck page gets a real narrow-viewport layout
+Until now the deck page had essentially no mobile layout: the transport stack
+(sized for a wide screen) and the header (one unwrapped row) just got smaller
+via `transform: scale()`, which stopped working below ~1000 px and left the
+stack clipped/overlapping the disc and the header text cut off. New
+`@media (max-width: 700px)` block in `deck.css`:
+- **`.tt-deck` switches from the desktop grid-centred-disc-with-a-floating-
+  left-stack layout to a plain flex column**: disc first, controls after,
+  reordered visually with `order` (DOM order is unchanged — controls still
+  come first in `Deck.tsx`, for the desktop layout). `--disc-w` becomes
+  `min(95vw, calc(100vh - 270px), 560px)` — width-bound on a tall phone,
+  height-bound on a short one — so the disc is always as big as it can be
+  without starving the controls under it. `.tt-deck` keeps `overflow-y: auto`
+  as a safety net for anything shorter than the formula accounts for.
+- **`.tt-deck__controls` goes from `position: absolute` + `transform: scale()`
+  to `position: static`, a wrapped flex row, and `margin-top: auto`** — real
+  (flow-based) sizing rather than a transform, and pinned to the bottom of the
+  stage. Every control's width/height is now `calc(Npx * var(--ctl-scale, 1))`
+  (added to `.tt-start`, `.tt-speed__btn`, `.tt-pitch__track`,
+  `.tt-pitch__readout`, `.tt-pitch__range`, `.tt-pitch__slider`, and the
+  detent's `top`/`bottom`) — `--ctl-scale` defaults to `1` (unset), so desktop
+  is pixel-identical to before; mobile sets `--ctl-scale: 0.74` on
+  `.tt-deck__controls` and everything under it shrinks for real, in flow
+  (33/45 + START wrap onto one row, the pitch group onto a second).
+- **Header** (`.tt-app__header`) wraps onto a second row (`flex-wrap: wrap`)
+  and shrinks; the "no disc" / track-title span (now `.tt-app__track` — added
+  the class) truncates with an ellipsis instead of overflowing. The camera
+  button carries two labels in the DOM now
+  (`.tt-camctl__label-full` / `-short`, `CameraControl.tsx`) and CSS swaps
+  which is visible — "Enable camera" → "Camera", "Camera blocked" →
+  "Blocked", etc. — so it never clips. In practice the header fits on one line
+  down to ~375 px anyway; the wrap rule is there for anything narrower.
+- **`SidePanel` no longer defaults open on a narrow viewport** — it was
+  `useState(true)` unconditionally, so its ~80vw body covered most of the
+  disc the instant a phone loaded the page. `isNarrowViewport()` (a
+  `matchMedia('(max-width: 700px)')` check, same breakpoint as the CSS) gates
+  the initial state; desktop behaviour (opens by default) is unchanged.
+- Verified by measuring computed geometry (not just screenshots — the in-app
+  browser's screenshot capture is flaky right after a resize, see the power
+  gate note above) at 375×812, 375×667, 375×500 and 375×320: the disc-size
+  formula degrades gracefully, nothing clips or overlaps, and desktop at
+  1440×860 is byte-for-byte the same control sizes/positions as before this
+  change.
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random

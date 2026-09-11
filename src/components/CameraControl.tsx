@@ -26,6 +26,19 @@ export function CameraControl({
             ? 'Camera failed'
             : 'Enable camera'
 
+  // A shorter label swaps in on narrow screens (CSS-driven, see .tt-camctl__label-*)
+  // so the button never gets clipped in the header on mobile.
+  const shortLabel =
+    state === 'on'
+      ? 'On'
+      : state === 'requesting'
+        ? '…'
+        : state === 'denied'
+          ? 'Blocked'
+          : state === 'error'
+            ? 'Failed'
+            : 'Camera'
+
   const onClick = state === 'on' ? onDisable : onEnable
 
   return (
@@ -38,7 +51,8 @@ export function CameraControl({
       title={error ?? undefined}
     >
       <span className="tt-camctl__dot" aria-hidden />
-      {label}
+      <span className="tt-camctl__label-full">{label}</span>
+      <span className="tt-camctl__label-short">{shortLabel}</span>
       {(state === 'denied' || state === 'error') && error ? (
         <span className="tt-camctl__diag">{error}</span>
       ) : null}

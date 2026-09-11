@@ -5,13 +5,22 @@ import { GesturePanel } from './GestureHUD'
 
 type Tab = 'crate' | 'gestures'
 
+/** Matches the deck.css mobile breakpoint (`@media (max-width: 700px)`). */
+const isNarrowViewport = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(max-width: 700px)').matches
+
 /**
  * One right-edge drawer holding both the crate and the gesture info as tabs.
  * Collapsed, it's a single thin handle — nothing sits idle on screen.
  * Turning the camera on brings the Gestures tab forward once.
+ *
+ * Starts OPEN on desktop (the crate invites a click) but CLOSED on a narrow
+ * viewport — there, its ~80vw body would otherwise cover most of the disc
+ * the instant the deck loads.
  */
 export function SidePanel() {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(() => !isNarrowViewport())
   const [tab, setTab] = useState<Tab>('crate')
   const cameraOn = useDeckStore((s) => s.cameraState === 'on')
   const wasCameraOn = useRef(cameraOn)

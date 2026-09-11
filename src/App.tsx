@@ -38,7 +38,9 @@ export default function App() {
         </div>
         <div className="tt-app__status">
           <span data-live={powered}>{powered ? 'POWERED' : 'STANDBY'}</span>
-          <span>{loadedTrack ? `▶ ${loadedTrack.title}` : 'no disc'}</span>
+          <span className="tt-app__track">
+            {loadedTrack ? `▶ ${loadedTrack.title}` : 'no disc'}
+          </span>
           <label className="tt-app__loop">
             <input
               type="checkbox"
