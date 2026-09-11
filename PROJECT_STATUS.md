@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 34 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 35 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -360,15 +360,48 @@ small"). The actual answer needed no scaling trick at all:
   `right`/`transform: scale(clamp(...))` parking formula) is **342px** again
   — the container's natural width is set by the pitch row (its widest
   child), not the 33/45 pair.
-- **Mobile `--disc-w` height reserve is 335px** (three stacked rows —
-  START ~47px + 33/45 ~76px + pitch ~47px + 2×16px row gaps ≈ 203px at
-  `--ctl-scale: 0.74` — plus header clearance, the min gap, and bottom
-  padding). Verified at 375×812 and 375×667 (no scroll either way, disc
-  width- then height-bound as expected) and desktop 1600×900/900×700 (START,
-  the 33/45 pair, and the pitch track all measure exactly flush — 212px vs
-  212px — with the readout/range overhanging as intended); functional
-  checks (start toggle, speed switch, pitch tap-to-end, range toggle) still
-  pass.
+- **Mobile `--disc-w` height reserve** (three stacked rows — START ~47px +
+  33/45 ~76px + pitch ~47px + 2×16px row gaps ≈ 203px at `--ctl-scale: 0.74`
+  — plus header clearance, the gap to the controls, and bottom padding; see
+  the mobile-centring note right below for the current value). Verified at
+  375×812 and 375×667 (no scroll either way, disc width- then height-bound as
+  expected) and desktop 1600×900/900×700 (START, the 33/45 pair, and the
+  pitch track all measure exactly flush — 212px vs 212px — with the
+  readout/range overhanging as intended); functional checks (start toggle,
+  speed switch, pitch tap-to-end, range toggle) still pass.
+
+### Mobile polish: centred deck, closer controls, a more clickable header
+Four small, mobile-only fixes (`@media (max-width: 700px)` in `deck.css`),
+against reference screenshots:
+- **`.tt-deck` centres the disc+controls group as one block** —
+  `justify-content: flex-start` → `center`. Previously the disc sat right
+  under the header and `.tt-deck__controls` had `margin-top: auto` pinning it
+  to the very bottom of the screen, leaving a big dead gap on a tall phone.
+  Removed that `margin-top: auto`; the group's own `gap: 14px` is now the
+  actual disc-to-controls spacing (was up to ~200px), and the whole
+  [disc, gap, controls] block centres vertically in the space below the
+  fixed header.
+- Reduced `.tt-deck`'s top padding **96px → 84px** (closer to the header's
+  actual mobile height) and bumped bottom padding 20px → 24px, so the
+  centring reads as "centred in the screen," not "centred in an
+  already-top-biased box." `--disc-w`'s height-reserve term followed:
+  **325px** (84 header clearance + 14 min gap + ~203 controls + 24 bottom
+  padding).
+- **`.tt-camctl` (the camera button) is a real tap target on mobile now** —
+  padding `6px 10px` → `12px 16px` (≈24px → ≈37px tall), a brighter border
+  (`rgba(255,255,255,0.22)`) and a faint fill (`rgba(255,255,255,0.07)`) so
+  it doesn't read as flat text. Desktop's `.tt-camctl` rule is untouched.
+- **`.tt-panel__handle` (the CRATE/GESTURES tab) is bigger and lit** on
+  mobile — more padding, a `var(--backlight)` (amber) border + glow
+  (`box-shadow` using `var(--glow)`), brighter label text, and a bigger
+  chevron in the accent colour — so it reads as a pressable tab, not a thin
+  sliver at the edge. Desktop keeps the original subdued styling.
+- All four verified via computed geometry (375×812, 375×667 — disc
+  vertically centred with symmetric top/bottom slack, camera button ~37px
+  tall, handle ~34px wide, no scroll at either height) and functional checks
+  (start/speed/pitch controls, panel-handle click-to-open); desktop measured
+  unchanged (1600×900) since none of these rules exist outside the mobile
+  media query.
 
 ### Disc / vinyl redesign
 - **Grooves are plain evenly-spaced concentric circles** (was pseudo-random

@@ -1198,9 +1198,18 @@
     padding: 4px 0; /* a bigger tap target around the checkbox + label */
   }
   .tt-camctl {
-    padding: 6px 10px;
-    font-size: 10px;
-    gap: 6px;
+    /* bigger tap target + more visual presence — this is the one control in
+       the header a mobile visitor actually needs to press */
+    padding: 12px 16px;
+    font-size: 11px;
+    gap: 8px;
+    border-radius: 10px;
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .tt-camctl__dot {
+    width: 9px;
+    height: 9px;
   }
   /* a short label swaps in so the button never clips (see CameraControl.tsx) */
   .tt-camctl__label-full {
@@ -1214,22 +1223,24 @@
     max-width: calc(100vw - 24px);
   }
 
-  /* -- deck: the disc takes the space; the transport stack moves under it,
-     reflowed (not the desktop float-beside-the-disc, scale-to-fit version) -- */
+  /* -- deck: disc + transport stack centred as ONE group in the space below
+     the header, not pinned to the top with the controls dangling at the
+     bottom edge -- */
   .tt-deck {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 14px;
-    padding: 96px 14px 20px;
+    padding: 84px 14px 24px;
     overflow-y: auto; /* a short/landscape phone scrolls rather than clips */
     /* width-bound on a tall phone, height-bound on a short/landscape one, so
        the disc is always as big as it can be without starving the controls.
-       335px reserve = header clearance (96) + min gap (14) + the three
-       stacked control rows (START ~47px, 33/45 ~76px, pitch ~47px, plus
-       2×16px row gaps — ~203px at --ctl-scale: 0.74) + bottom padding (20). */
-    --disc-w: min(95vw, calc(100vh - 335px), 560px);
+       325px reserve = header clearance (84) + the gap to the controls (14) +
+       the three stacked control rows (START ~47px, 33/45 ~76px, pitch ~47px,
+       plus 2×16px row gaps — ~203px at --ctl-scale: 0.74) + bottom padding
+       (24). */
+    --disc-w: min(95vw, calc(100vh - 325px), 560px);
   }
   .tt-platter {
     order: 1;
@@ -1248,10 +1259,6 @@
        row (an earlier pass) broke that. */
     width: 100%;
     max-width: 380px;
-    /* pin to the bottom of the stage on a tall phone, where the disc (capped
-       by width, not height) doesn't reach all the way down; on a short one
-       there's little/no free space and this collapses to the plain gap */
-    margin-top: auto;
     /* real (flow-based) sizing at mobile, vs. the desktop stack's transform:
        scale() — see the --ctl-scale-driven width/height on every control */
     --ctl-scale: 0.74;
@@ -1261,5 +1268,23 @@
   }
   .tt-pitch {
     gap: 5px;
+  }
+
+  /* -- side-panel handle: bigger and lit, so it reads as a tab worth
+     pressing rather than a sliver at the edge -- */
+  .tt-panel__handle {
+    padding: 20px 11px;
+    border-width: 1.5px;
+    border-color: var(--backlight);
+    box-shadow: -2px 0 16px -4px var(--glow);
+  }
+  .tt-panel__handle-label {
+    font-size: 11px;
+    letter-spacing: 0.26em;
+    color: var(--text-primary);
+  }
+  .tt-panel__handle-chev {
+    font-size: 13px;
+    color: var(--backlight);
   }
 }
