@@ -307,19 +307,23 @@
   /* usable left gutter = the space between the viewport edge and the disc */
   --gutter: calc((100vw - var(--disc-w)) / 2);
   /* Shrink the stack (about its right edge, so it stays glued to the disc) to
-     whatever fraction of its ~214px natural width (the 33/45 pair — the
-     widest of the three, now that they're all matched) the gutter can hold —
+     whatever fraction of its ~342px natural width (the pitch row — readout +
+     track + range key — is the widest of the three) the gutter can hold —
      full size on wide screens, down to 0.5 before it would ever reach the
      disc. */
   transform: translateY(-50%) scale(0.82);
   transform: translateY(-50%)
-    scale(clamp(0.5, (var(--gutter) - 24px) / 214px, 1));
+    scale(clamp(0.5, (var(--gutter) - 24px) / 342px, 1));
   transform-origin: right center;
   z-index: 6;
   display: flex;
   flex-direction: column;
-  /* centre the narrower start/pitch (212px) under the 33/45 pair (214px) —
-     a 2px difference, invisible, so the column still reads flush */
+  /* `align-items: center` centres START (212px) and the 33/45 pair (214px)
+     under the wider 342px pitch row — and because the pitch row's readout
+     and range key are equal widths (59px each) flanking the track, the
+     track itself (212px) ends up centred WITHIN that row too, so it lands
+     exactly flush with START/33+45 for free; the readout/range overhang
+     left/right beyond that, by design. */
   align-items: center;
   gap: 16px;
 }
@@ -353,10 +357,11 @@
 }
 
 /* --- start / stop (face swaps between the on / off PNGs) ---
-   Native PNG size — this (with the 33/45 pair) is the size reference; the
-   pitch group is scaled DOWN to match it (see --pitch-scale below), not the
-   other way around. Upscaling the start/speed art past its native raster
-   resolution is what was going soft — this keeps it crisp. */
+   Native PNG size (212×64) — which happens to be the exact native size of
+   pitch-fader-base.png too, so the two line up without any extra scaling
+   (see the .tt-pitch comment below). Upscaling past native raster
+   resolution is what made this go soft in an earlier pass — every size
+   here is native × --ctl-scale, never bigger. */
 .tt-start {
   width: calc(212px * var(--ctl-scale, 1));
   height: calc(64px * var(--ctl-scale, 1));
@@ -371,8 +376,8 @@
   gap: 8px;
 }
 .tt-speed__btn {
-  /* native size; two of these + the row's 8px gap = 214px, the column
-     width every other group now matches */
+  /* native size; two of these + the row's 8px gap = 214px, matching
+     START (212px) and the pitch track (212px) to within 2px */
   width: calc(103px * var(--ctl-scale, 1));
   height: calc(103px * var(--ctl-scale, 1));
 }
@@ -381,28 +386,27 @@
 }
 
 /* --- pitch: LCD readout · rail · range key, one row ---
-   Scaled DOWN from its native 342px total width to 212px — the same column
-   width as START (and near enough the 33/45 pair's 214px) — via
-   --pitch-scale (212 / 342), applied on top of the usual --ctl-scale so
-   mobile still shrinks everything together. */
+   All native size (like START/33/45 — nothing here is up- or down-scaled
+   beyond the usual --ctl-scale). The pitch-fader-base PNG is natively
+   212×64 — the *same* size as START — so with the readout and range key
+   equal widths (59px each) flanking it symmetrically, centring the row
+   (`.tt-deck__controls`'s `align-items: center`) lines the track's own
+   edges up flush with START/33+45 for free; the readout and range key
+   overhang left/right beyond that, by design (see the reference shots). */
 .tt-pitch {
   display: flex;
   align-items: center;
-  gap: calc(6px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  --pitch-scale: calc(106 / 171); /* = 212 / 342, reduced */
+  gap: calc(6px * var(--ctl-scale, 1));
 }
 .tt-pitch__readout {
   flex: 0 0 auto;
-  width: calc(59px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  width: calc(59px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
   display: grid;
   place-items: center;
   background: url('/controls/pitch-fader-lcd-readout.png') center / 100% 100%
     no-repeat;
-  font-size: max(
-    7px,
-    calc(10px * var(--pitch-scale, 1) * var(--ctl-scale, 1))
-  );
+  font-size: max(7px, calc(10px * var(--ctl-scale, 1)));
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-weight: 800;
   line-height: 1;
@@ -417,8 +421,8 @@
 .tt-pitch__track {
   position: relative;
   flex: 0 0 auto;
-  width: calc(212px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  width: calc(212px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
   background: url('/controls/pitch-fader-base.png') center / contain no-repeat;
   touch-action: none;
   cursor: ew-resize;
@@ -426,8 +430,8 @@
 .tt-pitch__detent {
   position: absolute;
   left: 50%;
-  top: calc(18px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  bottom: calc(18px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  top: calc(18px * var(--ctl-scale, 1));
+  bottom: calc(18px * var(--ctl-scale, 1));
   width: 2px;
   transform: translateX(-50%);
   background: rgba(255, 106, 43, 0.55);
@@ -442,8 +446,8 @@
 .tt-pitch__slider {
   position: absolute;
   top: 50%;
-  width: calc(51px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  height: calc(36px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  width: calc(51px * var(--ctl-scale, 1));
+  height: calc(36px * var(--ctl-scale, 1));
   transform: translate(-50%, -50%);
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
@@ -454,8 +458,8 @@
 }
 .tt-pitch__range {
   flex: 0 0 auto;
-  width: calc(59px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
-  height: calc(64px * var(--pitch-scale, 1) * var(--ctl-scale, 1));
+  width: calc(59px * var(--ctl-scale, 1));
+  height: calc(64px * var(--ctl-scale, 1));
 }
 .tt-pitch__range:active {
   transform: translateY(1.5px) scale(0.97);
@@ -1222,10 +1226,10 @@
     overflow-y: auto; /* a short/landscape phone scrolls rather than clips */
     /* width-bound on a tall phone, height-bound on a short/landscape one, so
        the disc is always as big as it can be without starving the controls.
-       260px reserve = header clearance (96) + min gap (14) + the two control
-       rows (~116 at --ctl-scale: 0.74, now that start/speed are native-sized
-       and only pitch is scaled down) + bottom padding (20), with slack. */
-    --disc-w: min(95vw, calc(100vh - 260px), 560px);
+       335px reserve = header clearance (96) + min gap (14) + the three
+       stacked control rows (START ~47px, 33/45 ~76px, pitch ~47px, plus
+       2×16px row gaps — ~203px at --ctl-scale: 0.74) + bottom padding (20). */
+    --disc-w: min(95vw, calc(100vh - 335px), 560px);
   }
   .tt-platter {
     order: 1;
@@ -1235,11 +1239,13 @@
     order: 2;
     position: static;
     transform: none;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 10px 14px;
+    /* still flex-direction: column (inherited) — START, then 33/45, then
+       pitch, each its OWN row, same as desktop. That (not a wrapped row) is
+       what keeps the pitch track flush with START/33+45: every row centres
+       independently on the same axis via align-items: center, and since
+       START and the track are both exactly 212px wide, same-centre +
+       same-width = same edges, for free. Wrapping start/speed onto a shared
+       row (an earlier pass) broke that. */
     width: 100%;
     max-width: 380px;
     /* pin to the bottom of the stage on a tall phone, where the disc (capped
