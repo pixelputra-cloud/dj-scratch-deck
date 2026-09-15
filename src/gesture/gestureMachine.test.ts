@@ -166,8 +166,8 @@ describe('POINT-PITCH', () => {
     expect(down.pitchValue).toBeCloseTo(0, 3) // p0 = 0, y = y0
 
     const last = ramp(-0.1) // hand moves up 0.1 -> positive (faster)
-    expect(last).toBeGreaterThan(3)
-    expect(last).toBeLessThan(6)
+    expect(last).toBeGreaterThan(5)
+    expect(last).toBeLessThan(7.5)
   })
 
   it('clamps to the active range', () => {
@@ -188,9 +188,9 @@ describe('POINT-PITCH', () => {
       wideCtx,
     )
     const last = ramp(-0.1, wideCtx)
-    // same 0.1 hand travel that swings ~4-5% of ±8 should swing ~8-10% of ±16
-    expect(last).toBeGreaterThan(6)
-    expect(last).toBeLessThan(12)
+    // same 0.1 hand travel that swings ~6-7.5% of ±8 should swing ~12-15% of ±16
+    expect(last).toBeGreaterThan(10)
+    expect(last).toBeLessThan(15)
   })
 
   it('rides through a single dropped-pose frame without releasing', () => {

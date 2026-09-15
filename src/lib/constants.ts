@@ -46,13 +46,22 @@ export const PITCH_POINT_EXIT_FRAMES = 3
 /** pitch-% per unit of vertical hand travel, per % of the active pitch range
  *  — i.e. gain = pitchRange × this. Scaling by range means the same
  *  comfortable hand movement always sweeps the *whole* fader, at ±8 or ±16
- *  alike (a flat gain made ±16 need twice the travel of ±8). */
-export const PITCH_GESTURE_GAIN = 6.25
-/** One Euro filter on the tracked index-tip Y — gentler than the scratch
- *  filter (pitch wants a steady hold, not fast-motion tracking), so small
- *  camera jitter doesn't read as a hand movement. */
-export const PITCH_ONE_EURO_MIN_CUTOFF = 1.4 // Hz
-export const PITCH_ONE_EURO_BETA = 0.25
+ *  alike (a flat gain made ±16 need twice the travel of ±8). Raised from
+ *  6.25 — the first pass erred toward a small, precise movement and read as
+ *  sluggish; ~0.25 of frame height for the full swing feels more direct. */
+export const PITCH_GESTURE_GAIN = 8
+/** One Euro filter on the tracked index-tip Y. The first pass (1.4 Hz /
+ *  0.25) erred toward smoothness and felt laggy — the low `beta` meant the
+ *  cutoff barely rose even while the hand was genuinely moving, so the
+ *  filter kept damping real motion, not just jitter. Raised `beta` a lot
+ *  (the filter's whole job is low-jitter-when-still + low-lag-when-moving;
+ *  a low beta only gets the first half) and `dCutoff` too, so the velocity
+ *  estimate itself reacts faster instead of lagging the raw motion by a
+ *  frame or two. Still gentler than the scratch filter — pitch wants a
+ *  steady hold at rest, scratch never does — just not this gentle. */
+export const PITCH_ONE_EURO_MIN_CUTOFF = 2.5 // Hz
+export const PITCH_ONE_EURO_BETA = 0.9
+export const PITCH_ONE_EURO_D_CUTOFF = 1.5 // Hz
 export const STILLNESS_THRESHOLD = 0.15 // x handScale per frame
 
 /** One Euro filter for the scratch angular velocity. Raised from the PRD's

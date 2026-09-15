@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 38 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 39 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -521,15 +521,31 @@ positioned and stacked:
     dropped-pose frames before releasing, mirroring `SCRATCH_EXIT_FRAMES`,
     so one misread finger doesn't drop the drag.
   - **Gain now scales with the active pitch range**: `gain = pitchRange ×
-    PITCH_GESTURE_GAIN` (6.25) instead of a flat `45`. Previously ±16 needed
+    PITCH_GESTURE_GAIN` instead of a flat `45`. Previously ±16 needed
     *double* the hand travel of ±8 for the same swing (the old flat gain
     was tuned around ±8); now the same comfortable movement always sweeps
     the whole fader at either range.
   - New constants: `PITCH_POINT_EXIT_FRAMES`, `PITCH_GESTURE_GAIN`,
-    `PITCH_ONE_EURO_MIN_CUTOFF` (1.4 Hz), `PITCH_ONE_EURO_BETA` (0.25) —
-    gentler than the scratch filter's, since pitch wants a steady hold
-    rather than fast-motion tracking. `PINCH_ENTER_DIST`/`PINCH_EXIT_DIST`
-    removed.
+    `PITCH_ONE_EURO_MIN_CUTOFF`, `PITCH_ONE_EURO_BETA`, `PITCH_ONE_EURO_D_CUTOFF`.
+    `PINCH_ENTER_DIST`/`PINCH_EXIT_DIST` removed.
+  - **Follow-up tuning pass** (user feedback: still felt sluggish after the
+    pose swap) — the *first* cut of these numbers erred hard toward
+    smoothness over responsiveness: `PITCH_GESTURE_GAIN` **6.25 → 8**;
+    `PITCH_ONE_EURO_MIN_CUTOFF` **1.4 Hz → 2.5 Hz**; `PITCH_ONE_EURO_BETA`
+    **0.25 → 0.9** (this was the main culprit — the filter's whole point is
+    low-jitter-at-rest *and* low-lag-in-motion, and a beta that low meant the
+    cutoff barely rose even while the hand was genuinely moving, so it kept
+    damping real motion, not just noise); added an explicit
+    `PITCH_ONE_EURO_D_CUTOFF` **1.5 Hz** (was an implicit default of 1.0)
+    so the velocity estimate itself reacts faster instead of lagging the raw
+    motion by a frame or two. Confirmed in the `ramp()` unit tests: filtered
+    output now settles to ~99% of the unfiltered target (was well under before
+    — the original bounds had to be loosened because the new settle values
+    landed above the old upper bound). Still gentler than the scratch
+    filter (3.5 Hz / 1.2) — pitch wants a steady hold at rest, scratch never
+    does — just meaningfully less gentle than the first pass. **Real-camera
+    feel is still the only way to fully validate this** — these are
+    "tune by feel" constants in `lib/constants.ts` if it needs another pass.
   - `ActiveGestures.pinch` → **`.point`** (`useDeckStore.ts`,
     `deckController.ts`); `GestureHUD.tsx`'s vocab entry and `active.pinch`
     reference updated to match (`POINT-PITCH`, `active.point`).

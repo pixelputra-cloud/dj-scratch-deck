@@ -16,6 +16,7 @@ import {
   GESTURE_COOLDOWN_MS,
   PITCH_GESTURE_GAIN,
   PITCH_ONE_EURO_BETA,
+  PITCH_ONE_EURO_D_CUTOFF,
   PITCH_ONE_EURO_MIN_CUTOFF,
   PITCH_POINT_EXIT_FRAMES,
   PLATTER_INNER_R,
@@ -124,6 +125,7 @@ function newFSM(): HandFSM {
     pointFilter: new OneEuroFilter({
       minCutoff: PITCH_ONE_EURO_MIN_CUTOFF,
       beta: PITCH_ONE_EURO_BETA,
+      dCutoff: PITCH_ONE_EURO_D_CUTOFF,
     }),
     dwellCandidate: null,
     dwellStart: 0,
