@@ -7,10 +7,9 @@ import {
   handCentroid,
   handScale,
   isFistPose,
-  isPinchContext,
+  isPointPose,
   isScratchPose,
   isTwoFingerPose,
-  pinchDistance,
   poseCode,
   poseName,
   type Point,
@@ -139,22 +138,9 @@ describe('pose predicates', () => {
     expect(isScratchPose(fist)).toBe(false)
   })
 
-  it('isPinchContext wants the other three fingers curled', () => {
-    expect(isPinchContext(poseCode(hand({ index: true })))).toBe(true)
-    expect(isPinchContext(poseCode(hand({ index: true, middle: true })))).toBe(false)
-  })
-})
-
-describe('pinchDistance', () => {
-  it('is small when thumb meets index, large when the hand is open', () => {
-    const open = hand({ index: true, middle: true, ring: true, pinky: true, thumb: true })
-    const openD = pinchDistance(open)
-
-    // pinch: move thumb tip onto the index tip
-    const pinch = hand({ index: true, thumb: true })
-    pinch[4] = { ...pinch[8] }
-    expect(pinchDistance(pinch)).toBeLessThan(openD)
-    expect(pinchDistance(pinch)).toBeLessThan(0.35 * handScale(pinch))
+  it('isPointPose wants the other three fingers curled', () => {
+    expect(isPointPose(poseCode(hand({ index: true })))).toBe(true)
+    expect(isPointPose(poseCode(hand({ index: true, middle: true })))).toBe(false)
   })
 })
 
@@ -163,15 +149,14 @@ describe('poseName', () => {
     expect(
       poseName(
         poseCode(hand({ index: true, middle: true, ring: true, pinky: true })),
-        false,
       ),
     ).toBe('SCRATCH')
-    expect(poseName(poseCode(hand({ index: true, middle: true })), false)).toBe(
+    expect(poseName(poseCode(hand({ index: true, middle: true })))).toBe(
       'TWO-FINGER',
     )
-    expect(poseName(0, true)).toBe('PINCH')
-    expect(poseName(poseCode(hand()), false)).toBe('FIST')
-    expect(poseName(poseCode(hand({ index: true })), false)).toBe('—')
+    expect(poseName(poseCode(hand({ index: true })))).toBe('POINT')
+    expect(poseName(poseCode(hand()))).toBe('FIST')
+    expect(poseName(poseCode(hand({ ring: true })))).toBe('—')
   })
 })
 

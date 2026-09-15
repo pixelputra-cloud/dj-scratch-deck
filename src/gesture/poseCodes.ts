@@ -61,11 +61,6 @@ export function poseCode(lm: Point[]): number {
   return code
 }
 
-/** thumb tip(4) <-> index tip(8), raw distance (compare against ×handScale). */
-export function pinchDistance(lm: Point[]): number {
-  return dist2(lm[4], lm[8])
-}
-
 /** Hand centroid — mean of wrist + the four finger MCPs. Stable under finger
  *  articulation, which is what the stillness test wants. */
 export function handCentroid(lm: Point[]): Point {
@@ -95,19 +90,20 @@ export function fingertipsCentroid(lm: Point[]): Point {
 
 export type PoseName =
   | 'SCRATCH'
-  | 'PINCH'
+  | 'POINT'
   | 'TWO-FINGER'
   | 'FIST'
   | '—'
 
 const OPEN_HAND = FINGER.INDEX | FINGER.MIDDLE | FINGER.RING
 
-/** Human-readable label for the HUD. `pinching` is passed in because a pinch
- *  is a distance test, not a pure pose-code match. */
-export function poseName(code: number, pinching: boolean): PoseName {
-  if (pinching) return 'PINCH'
+/** Human-readable label for the HUD. Purely a pose-code match — unlike the
+ *  old pinch gesture, POINT has no separate distance/contact test, so the
+ *  code alone is enough to name it. */
+export function poseName(code: number): PoseName {
   const four = code & FOUR_FINGERS
   if (four === 0) return 'FIST'
+  if (isPointPose(code)) return 'POINT'
   if (four === (FINGER.INDEX | FINGER.MIDDLE)) return 'TWO-FINGER'
   if ((code & OPEN_HAND) === OPEN_HAND) return 'SCRATCH'
   return '—'
@@ -129,12 +125,12 @@ export function isFistPose(code: number): boolean {
 }
 
 /**
- * The non-thumb context for a pinch: the index (the pinching finger) is
- * extended and middle/ring/pinky are curled. Requiring the index rules out a
- * closed fist, whose curled index tip sits close enough to the thumb to
- * otherwise read as a pinch.
+ * A lone pointing index finger — extended, with middle/ring/pinky curled.
+ * Drives the pitch fader (POINT-PITCH): no pinch or thumb contact needed,
+ * just this pose. Requiring the other three curled rules out a fist and the
+ * open/two-finger poses, so it can't be confused with them.
  */
-export function isPinchContext(code: number): boolean {
+export function isPointPose(code: number): boolean {
   return (
     (code & FINGER.INDEX) !== 0 &&
     (code & (FINGER.MIDDLE | FINGER.RING | FINGER.PINKY)) === 0

@@ -6,7 +6,7 @@
  *
  * Vocabulary:
  *   SCRATCH          index in the platter annulus  -> platter velocity
- *   PINCH-PITCH      thumb+index, others curled    -> pitch fader
+ *   POINT-PITCH      index only, others curled      -> pitch fader
  *   PALM-HOLD        open hand, held still, 700 ms  -> start/stop (latched)
  *   TWO-FINGER-HOLD  index+middle, still, 700 ms    -> 33/45 (latched)
  */
@@ -14,14 +14,17 @@
 import {
   DWELL_MS,
   GESTURE_COOLDOWN_MS,
-  PINCH_ENTER_DIST,
-  PINCH_EXIT_DIST,
+  PITCH_GESTURE_GAIN,
+  PITCH_ONE_EURO_BETA,
+  PITCH_ONE_EURO_MIN_CUTOFF,
+  PITCH_POINT_EXIT_FRAMES,
   PLATTER_INNER_R,
   SCRATCH_ENTER_FRAMES,
   SCRATCH_EXIT_FRAMES,
   STILLNESS_THRESHOLD,
 } from '../lib/constants'
 import { clamp } from '../lib/math'
+import { OneEuroFilter } from './oneEuroFilter'
 import { inAnnulus, ScratchTracker } from './platterMapping'
 import {
   FINGER,
@@ -29,10 +32,9 @@ import {
   handCentroid,
   handScale,
   isFistPose,
-  isPinchContext,
+  isPointPose,
   isScratchPose,
   isTwoFingerPose,
-  pinchDistance,
   poseCode,
   poseName,
   type PoseName,
@@ -81,7 +83,7 @@ export interface GestureResult {
   hands: HandView[]
   /** playback-rate units while a gesture scratch is active, else null */
   scratchRate: number | null
-  /** absolute pitch % while a pinch-pitch is active, else null */
+  /** absolute pitch % while a point-pitch drag is active, else null */
   pitchValue: number | null
   /** fired exactly on the frame the dwell completes */
   motorToggle: boolean
@@ -94,9 +96,14 @@ interface HandFSM {
   disqualify: number
   scratching: boolean
   tracker: ScratchTracker
-  pinching: boolean
-  pinchY0: number
-  pinchP0: number
+  pointing: boolean
+  pointY0: number
+  pointP0: number
+  /** consecutive frames the POINT pose has failed to match while still
+   *  `pointing` — mirrors SCRATCH_EXIT_FRAMES so one dropped frame doesn't
+   *  drop the drag. */
+  pointDisqualify: number
+  pointFilter: OneEuroFilter
   dwellCandidate: number | null
   dwellStart: number
   latchedPose: number | null
@@ -110,9 +117,14 @@ function newFSM(): HandFSM {
     disqualify: 0,
     scratching: false,
     tracker: new ScratchTracker(),
-    pinching: false,
-    pinchY0: 0,
-    pinchP0: 0,
+    pointing: false,
+    pointY0: 0,
+    pointP0: 0,
+    pointDisqualify: 0,
+    pointFilter: new OneEuroFilter({
+      minCutoff: PITCH_ONE_EURO_MIN_CUTOFF,
+      beta: PITCH_ONE_EURO_BETA,
+    }),
     dwellCandidate: null,
     dwellStart: 0,
     latchedPose: null,
@@ -126,7 +138,9 @@ function releaseHeld(f: HandFSM): void {
   f.scratching = false
   f.qualify = 0
   f.disqualify = 0
-  f.pinching = false
+  f.pointing = false
+  f.pointDisqualify = 0
+  f.pointFilter.reset()
   f.dwellCandidate = null
   f.prevCentroid = null
   f.centroidVel = 0
@@ -183,11 +197,10 @@ export class GestureMachine {
         code,
         hs,
         centroid,
-        // raw index tip — pinch-pitch's vertical drag reference
+        // raw index tip — POINT-PITCH's vertical drag reference
         indexTipN: s.landmarks[8],
         // 4-fingertip mean, projected to px — the scratch pivot + annulus test
         anchorPx: ctx.mapPoint(fingertipsCentroid(s.landmarks)),
-        pinchDist: pinchDistance(s.landmarks),
       }
     })
 
@@ -263,7 +276,7 @@ export class GestureMachine {
       result.scratchRate = rate
     }
 
-    // ---- AUX hand: PINCH then DWELL ----
+    // ---- AUX hand: POINT-PITCH then DWELL ----
     const aF = this.fsm(auxFt.s.handedness)
     const auxBusyWithScratch = oneHand && sF.scratching
     const auxFingerInAnnulus = inAnnulus(
@@ -278,25 +291,43 @@ export class GestureMachine {
     const auxAllowed = !auxBusyWithScratch && !auxFingerInAnnulus
 
     if (auxAllowed) {
-      // PINCH-PITCH
-      const enter =
-        auxFt.pinchDist < PINCH_ENTER_DIST * auxFt.hs &&
-        isPinchContext(auxFt.code)
-      const stay = auxFt.pinchDist < PINCH_EXIT_DIST * auxFt.hs
-      if (!aF.pinching && enter) {
-        aF.pinching = true
-        aF.pinchY0 = auxFt.indexTipN.y
-        aF.pinchP0 = ctx.pitchPercent
-      } else if (aF.pinching && !stay) {
-        aF.pinching = false
+      // POINT-PITCH — pose-only, no pinch/contact test. Engages the instant
+      // the pose matches; a short exit debounce (PITCH_POINT_EXIT_FRAMES)
+      // rides through one dropped-pose frame without dropping the drag,
+      // same idea as SCRATCH's exit hysteresis.
+      const pointPoseNow = isPointPose(auxFt.code)
+      let justEngaged = false
+      if (pointPoseNow) {
+        aF.pointDisqualify = 0
+        if (!aF.pointing) {
+          aF.pointing = true
+          aF.pointFilter.reset()
+          justEngaged = true
+        }
+      } else if (aF.pointing) {
+        aF.pointDisqualify += 1
+        if (aF.pointDisqualify >= PITCH_POINT_EXIT_FRAMES) {
+          aF.pointing = false
+          aF.pointFilter.reset()
+        }
       }
-      if (aF.pinching) {
-        const raw = aF.pinchP0 + (aF.pinchY0 - auxFt.indexTipN.y) * 45
+      if (aF.pointing) {
+        // One Euro-filtered Y — the raw landmark is noisy enough on its own
+        // to read as unwanted hand movement.
+        const y = aF.pointFilter.filter(auxFt.indexTipN.y, now / 1000)
+        if (justEngaged) {
+          aF.pointY0 = y
+          aF.pointP0 = ctx.pitchPercent
+        }
+        // gain scales with the active range so the same comfortable hand
+        // travel always sweeps the whole fader, at ±8 or ±16 alike.
+        const gain = ctx.pitchRange * PITCH_GESTURE_GAIN
+        const raw = aF.pointP0 + (aF.pointY0 - y) * gain
         result.pitchValue = clamp(raw, -ctx.pitchRange, ctx.pitchRange)
       }
 
-      // DWELL (only when not pinching)
-      if (!aF.pinching) {
+      // DWELL (only when not pointing)
+      if (!aF.pointing) {
         const candidate = isFistPose(auxFt.code)
           ? FIST_CODE
           : isTwoFingerPose(auxFt.code)
@@ -333,7 +364,8 @@ export class GestureMachine {
         }
       }
     } else {
-      aF.pinching = false
+      aF.pointing = false
+      aF.pointFilter.reset()
       aF.dwellCandidate = null
     }
 
@@ -344,12 +376,12 @@ export class GestureMachine {
       const isScratchHand = ft === scratchFt
       let owns: HandView['owns'] = null
       if (isScratchHand && sF.scratching) owns = 'scratch'
-      else if (ft === auxFt && aF.pinching) owns = 'pitch'
+      else if (ft === auxFt && aF.pointing) owns = 'pitch'
       else if (ft === auxFt && aF.dwellCandidate != null) owns = 'dwell'
 
       result.hands.push({
         handedness: ft.s.handedness,
-        pose: poseName(ft.code, f === aF && aF.pinching),
+        pose: poseName(ft.code),
         owns,
         dwellProgress:
           f.dwellCandidate != null

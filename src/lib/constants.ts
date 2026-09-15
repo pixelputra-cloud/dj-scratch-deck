@@ -38,8 +38,21 @@ export const GESTURE_COOLDOWN_MS = 500
  *  the 3-frame exit still guards against a dropped detection mid-scratch. */
 export const SCRATCH_ENTER_FRAMES = 1
 export const SCRATCH_EXIT_FRAMES = 3
-export const PINCH_ENTER_DIST = 0.35 // x handScale
-export const PINCH_EXIT_DIST = 0.55 // x handScale
+/** POINT-PITCH engages the instant the pose (index out, others curled) is
+ *  seen — no distance/contact test — and, like SCRATCH_EXIT_FRAMES, rides
+ *  through this many consecutive dropped-pose frames before releasing, so a
+ *  single misread finger doesn't drop the drag mid-move. */
+export const PITCH_POINT_EXIT_FRAMES = 3
+/** pitch-% per unit of vertical hand travel, per % of the active pitch range
+ *  — i.e. gain = pitchRange × this. Scaling by range means the same
+ *  comfortable hand movement always sweeps the *whole* fader, at ±8 or ±16
+ *  alike (a flat gain made ±16 need twice the travel of ±8). */
+export const PITCH_GESTURE_GAIN = 6.25
+/** One Euro filter on the tracked index-tip Y — gentler than the scratch
+ *  filter (pitch wants a steady hold, not fast-motion tracking), so small
+ *  camera jitter doesn't read as a hand movement. */
+export const PITCH_ONE_EURO_MIN_CUTOFF = 1.4 // Hz
+export const PITCH_ONE_EURO_BETA = 0.25
 export const STILLNESS_THRESHOLD = 0.15 // x handScale per frame
 
 /** One Euro filter for the scratch angular velocity. Raised from the PRD's

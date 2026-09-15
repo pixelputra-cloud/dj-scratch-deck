@@ -179,7 +179,7 @@ export function processGestureResult(
   )
   useDeckStore.getState().setActiveGestures({
     scratch: out.scratchRate != null,
-    pinch: out.pitchValue != null,
+    point: out.pitchValue != null,
     dwell: out.activeDwell,
   })
 
@@ -196,7 +196,7 @@ export function resetGestureControl(): void {
   }
   const s = useDeckStore.getState()
   s.setHands([])
-  s.setActiveGestures({ scratch: false, pinch: false, dwell: null })
+  s.setActiveGestures({ scratch: false, point: false, dwell: null })
 }
 
 // ---- the one animation loop -------------------------------------

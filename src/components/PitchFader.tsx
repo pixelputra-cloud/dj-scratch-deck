@@ -6,7 +6,7 @@ import { useDeckStore } from '../state/useDeckStore'
 
 /**
  * Horizontal pitch fader (PRD §5.6), in the transport stack left of the disc.
- * Right = faster (+range), matching PINCH-PITCH. A strong centre detent
+ * Right = faster (+range), matching POINT-PITCH. A strong centre detent
  * (enforced in the store) makes 0% easy to find. Tap near an end to jump
  * straight to that extreme. Works the same at ±8 / ±16.
  *

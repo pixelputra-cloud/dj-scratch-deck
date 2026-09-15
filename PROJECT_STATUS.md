@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 37 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 38 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -81,7 +81,7 @@ src/
     platterPhysics.ts               ONE pure velocity model (motor+pitch+rpm+hand). spin-up 0.35s / spin-down 1.2s.   [tested]
     workletContract.ts              typed message contract for the worklet
   gesture/
-    poseCodes.ts                    landmarks -> 5-bit finger pose, hand scale, pinch dist, predicates             [tested]
+    poseCodes.ts                    landmarks -> 5-bit finger pose, hand scale, predicates                         [tested]
     gestureMachine.ts               hysteresis / dwell / latch / cooldown / priority / two-hand assignment          [tested]
     oneEuroFilter.ts                                                                                                [tested]
     platterMapping.ts               screen->angle, the ±π unwrap (highest-risk line), ScratchTracker                [tested]
@@ -145,7 +145,8 @@ control.
   (electric-cyan, layered ABOVE the deck).
 - Four gestures: **SCRATCH** = open hand over the platter (1-frame enter /
   3-frame exit hysteresis so a dropped detection never drops the record;
-  scratch pivot = mean of the four fingertips); **PINCH-PITCH** = thumb+index;
+  scratch pivot = mean of the four fingertips); **POINT-PITCH** = a lone
+  pointing index finger, others curled (no pinch/contact — see pivots);
   **FIST-HOLD** = closed fist off the platter, still, 700 ms → start/stop;
   **TWO-FINGER-HOLD** = index+middle, still, 700 ms → 33/45. 700 ms latched
   dwell (pose must break to re-arm), 500 ms global cooldown, annulus priority,
@@ -501,6 +502,45 @@ positioned and stacked:
   target are now the same thing.
 - The landmark overlay is **electric cyan**, layered **above** the deck (z-8)
   rather than behind it — camera feed → platter + markings → hand mapping.
+- **Pitch is now POINT-PITCH, not PINCH-PITCH** — a lone pointing index
+  finger (others curled) drags the fader vertically; the old thumb-index
+  pinch/contact test is gone entirely. The user flagged the pinch as hard to
+  sustain via webcam tracking (three things had to hold at once: finger
+  shape, tight thumb-index distance, AND motion) and asked for a
+  single-pose gesture instead.
+  - `poseCodes.ts`: `isPinchContext` → **`isPointPose`** (same finger test,
+    index out + others curled — just no distance check anymore);
+    `pinchDistance()` deleted; `PoseName`'s `'PINCH'` → `'POINT'`; `poseName`
+    dropped its second (`pinching`) argument — the pose code alone is now
+    enough to name it, since there's no separate distance-engaged state.
+  - `gestureMachine.ts`: `HandFSM.pinching/pinchY0/pinchP0` →
+    `pointing/pointY0/pointP0`, plus a new `pointDisqualify` counter and a
+    per-hand `OneEuroFilter` (`pointFilter`) on the tracked index-tip Y.
+    Engages the instant the pose matches (no enter-distance threshold to
+    wait on); rides through `PITCH_POINT_EXIT_FRAMES` (3) consecutive
+    dropped-pose frames before releasing, mirroring `SCRATCH_EXIT_FRAMES`,
+    so one misread finger doesn't drop the drag.
+  - **Gain now scales with the active pitch range**: `gain = pitchRange ×
+    PITCH_GESTURE_GAIN` (6.25) instead of a flat `45`. Previously ±16 needed
+    *double* the hand travel of ±8 for the same swing (the old flat gain
+    was tuned around ±8); now the same comfortable movement always sweeps
+    the whole fader at either range.
+  - New constants: `PITCH_POINT_EXIT_FRAMES`, `PITCH_GESTURE_GAIN`,
+    `PITCH_ONE_EURO_MIN_CUTOFF` (1.4 Hz), `PITCH_ONE_EURO_BETA` (0.25) —
+    gentler than the scratch filter's, since pitch wants a steady hold
+    rather than fast-motion tracking. `PINCH_ENTER_DIST`/`PINCH_EXIT_DIST`
+    removed.
+  - `ActiveGestures.pinch` → **`.point`** (`useDeckStore.ts`,
+    `deckController.ts`); `GestureHUD.tsx`'s vocab entry and `active.pinch`
+    reference updated to match (`POINT-PITCH`, `active.point`).
+  - Tests (`gestureMachine.test.ts`): the old single-jump pinch assertions
+    don't exercise a One-Euro filter meaningfully — replaced with a `ramp()`
+    helper that moves the hand over ~30 frames (320 ms ramp + settle) before
+    asserting, plus a new test for the debounced release and one confirming
+    ±16 needs the same travel as ±8. `poseCodes.test.ts`: `pinchDistance`
+    describe block deleted; `poseName` calls drop the second argument.
+  - Mouse control (`PitchFader.tsx` drag) is **completely unchanged** — this
+    only touches the gesture input path.
 
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in

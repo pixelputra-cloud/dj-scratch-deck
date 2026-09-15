@@ -46,7 +46,6 @@ function mkHand(
   opts: {
     fingers?: Fingers
     anchorN?: Point
-    pinch?: boolean
     wristShift?: number // add to every x — used to fake centroid motion
   } = {},
 ): HandSample {
@@ -87,7 +86,6 @@ function mkHand(
     lm[3] = { x: wrist.x - 0.12, y: wrist.y - 0.1 }
     lm[4] = { x: wrist.x - 0.06, y: wrist.y - 0.04 }
   }
-  if (opts.pinch) lm[4] = { x: a.x + sx + 0.005, y: a.y + 0.005 }
 
   return { handedness, landmarks: lm }
 }
@@ -138,69 +136,81 @@ describe('SCRATCH hysteresis', () => {
   })
 })
 
-describe('PINCH-PITCH', () => {
+describe('POINT-PITCH', () => {
   const far = nAt(280) // well outside the annulus
+
+  /** Ramp the hand's Y from `far` to `far.y + dyTotal` over ~320 ms, then
+   *  hold for another ~160 ms so the One Euro filter settles — a single
+   *  before/after jump doesn't exercise it the way real motion does. */
+  function ramp(dyTotal: number, rangeCtx: GestureContext = CTX) {
+    let last: number | null = null
+    for (let i = 1; i <= 30; i++) {
+      const frac = Math.min(1, i / 20)
+      const y = far.y + dyTotal * frac
+      const r = m.update(
+        [mkHand('Right', { fingers: INDEX_ONLY, anchorN: { x: far.x, y } })],
+        i * 16,
+        rangeCtx,
+      )
+      if (r.pitchValue != null) last = r.pitchValue
+    }
+    return last
+  }
 
   it('captures a baseline and tracks vertical hand movement', () => {
     const down = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far })],
       0,
       CTX,
     )
     expect(down.pitchValue).toBeCloseTo(0, 3) // p0 = 0, y = y0
 
-    const up = m.update(
-      [
-        mkHand('Right', {
-          fingers: INDEX_ONLY,
-          anchorN: { x: far.x, y: far.y - 0.1 }, // hand up 0.1 -> ~+4.5%
-          pinch: true,
-        }),
-      ],
-      16,
-      CTX,
-    )
-    expect(up.pitchValue).toBeGreaterThan(3)
-    expect(up.pitchValue).toBeLessThan(6)
+    const last = ramp(-0.1) // hand moves up 0.1 -> positive (faster)
+    expect(last).toBeGreaterThan(3)
+    expect(last).toBeLessThan(6)
   })
 
   it('clamps to the active range', () => {
     m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far })],
       0,
       CTX,
     )
-    const r = m.update(
-      [
-        mkHand('Right', {
-          fingers: INDEX_ONLY,
-          anchorN: { x: far.x, y: far.y - 0.5 },
-          pinch: true,
-        }),
-      ],
-      16,
-      CTX,
-    )
-    expect(r.pitchValue).toBe(8) // clamped to +range
+    const last = ramp(-0.5)
+    expect(last).toBe(8) // clamped to +range
   })
 
-  it('releases when the pinch opens past the exit threshold', () => {
+  it('the gain scales with the active range — ±16 needs the same travel as ±8', () => {
+    const wideCtx: GestureContext = { ...CTX, pitchRange: 16 }
     m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far })],
+      0,
+      wideCtx,
+    )
+    const last = ramp(-0.1, wideCtx)
+    // same 0.1 hand travel that swings ~4-5% of ±8 should swing ~8-10% of ±16
+    expect(last).toBeGreaterThan(6)
+    expect(last).toBeLessThan(12)
+  })
+
+  it('rides through a single dropped-pose frame without releasing', () => {
+    m.update(
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far })],
       0,
       CTX,
     )
-    const open = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: far, pinch: false })],
-      16,
-      CTX,
-    )
-    expect(open.pitchValue).toBeNull()
+    const dropped = [mkHand('Right', { fingers: OPEN, anchorN: far })] // pose lost
+    const a = m.update(dropped, 16, CTX)
+    expect(a.pitchValue).not.toBeNull() // 1 bad frame — still held
+    const b = m.update(dropped, 32, CTX)
+    expect(b.pitchValue).not.toBeNull() // 2 bad frames — still held
+    const c = m.update(dropped, 48, CTX)
+    expect(c.pitchValue).toBeNull() // 3 bad frames — released (PITCH_POINT_EXIT_FRAMES)
   })
 })
 
 describe('disambiguation', () => {
-  it('an open hand in the annulus scratches; a pinch cannot claim it', () => {
+  it('an open hand in the annulus scratches; a lone pointing finger cannot claim it', () => {
     const inAnn = nAt(80)
     const r = m.update(
       [mkHand('Right', { fingers: OPEN, anchorN: inAnn })],
@@ -217,16 +227,16 @@ describe('disambiguation', () => {
   })
 
   it('a fingertip in the annulus blocks the aux-hand gestures entirely', () => {
-    // index-only + pinch, held in the annulus: not an open hand -> not SCRATCH,
-    // and the annulus priority rule suppresses the pinch -> nothing fires
+    // index-only, held in the annulus: not an open hand -> not SCRATCH, and
+    // the annulus priority rule suppresses POINT-PITCH -> nothing fires
     const inAnn = nAt(80)
     const r = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn })],
       0,
       CTX,
     )
     const r2 = m.update(
-      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn, pinch: true })],
+      [mkHand('Right', { fingers: INDEX_ONLY, anchorN: inAnn })],
       16,
       CTX,
     )
@@ -307,7 +317,7 @@ describe('two-hand assignment (PRD §6.4.4)', () => {
     m.update(
       [
         mkHand('Right', { fingers: OPEN, anchorN: near }),
-        mkHand('Left', { fingers: INDEX_ONLY, anchorN: far, pinch: true }),
+        mkHand('Left', { fingers: INDEX_ONLY, anchorN: far }),
       ],
       0,
       CTX,
@@ -318,7 +328,6 @@ describe('two-hand assignment (PRD §6.4.4)', () => {
         mkHand('Left', {
           fingers: INDEX_ONLY,
           anchorN: { x: far.x, y: far.y - 0.05 },
-          pinch: true,
         }),
       ],
       16,
