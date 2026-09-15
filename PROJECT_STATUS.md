@@ -639,6 +639,31 @@ Appendix-A constants; static build, no backend, no accounts, vendored model/WASM
 
 ## 6. Not done / open
 
+- **Proposed, not started — choose scratch hand (left/right), mirror the
+  transport controls to the opposite side of the disc.** User request on the
+  power-gate card (`.tt-powergate__panel`): "Users can choose whether they
+  want to scratch disk using left hand or right hand... the controls on the
+  main scratch disk page gets interchanged." I wrote up a scope (new
+  `scratchHand: 'left'|'right'` field in `useDeckStore`, default `'right'`;
+  a toggle control added to the power-gate card; a mirrored counterpart of
+  `.tt-deck__controls`'s desktop `right:`/`transform-origin:right` CSS in
+  `deck.css` for `left:`/`transform-origin:left`, gated on a `data-hand`
+  attribute; mobile is unaffected since controls already stack vertically
+  below the disc there, nothing to mirror) and flagged two open design
+  questions before touching any code:
+  1. Should the preference also bias `gestureMachine.ts`'s two-hand role
+     assignment (currently **purely spatial** — SCRATCH always goes to
+     whichever hand is nearer the platter each frame, regardless of
+     `Handedness`), or stay a visual/layout-only preference with gesture
+     behaviour untouched?
+  2. Should `SidePanel` (the Crate/Gestures drawer, hard-anchored `right: 0`
+     today) also flip to the opposite edge in left-hand mode, or stay put?
+  Asked the user to choose via `AskUserQuestion`; **both questions came back
+  dismissed** ("do not proceed, wait for next instruction"), then the user
+  said to stand down entirely for now. **No code has been touched** — no
+  store field, no CSS, no power-gate UI. Next agent: don't start
+  implementing off the scope above until the user actively re-opens this and
+  answers (or reframes) those two questions.
 - **Phase 4** — real licence-verified crate; waveform overview if wanted back;
   attribution credits UI.
 - **Phase 5** — onboarding overlay teaching the gestures, keyboard shortcuts,
