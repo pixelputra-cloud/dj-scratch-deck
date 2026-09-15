@@ -88,6 +88,13 @@ export function fingertipsCentroid(lm: Point[]): Point {
   return { x: x / idx.length, y: y / idx.length }
 }
 
+/** Mean of the index and middle finger tips. TWO-FINGER-PITCH's horizontal
+ *  drag reference — same rationale as `fingertipsCentroid`: averaging the
+ *  two tips cuts per-landmark jitter below what a single fingertip gives. */
+export function twoFingerCentroid(lm: Point[]): Point {
+  return { x: (lm[8].x + lm[12].x) / 2, y: (lm[8].y + lm[12].y) / 2 }
+}
+
 export type PoseName =
   | 'SCRATCH'
   | 'POINT'
@@ -126,9 +133,9 @@ export function isFistPose(code: number): boolean {
 
 /**
  * A lone pointing index finger — extended, with middle/ring/pinky curled.
- * Drives the pitch fader (POINT-PITCH): no pinch or thumb contact needed,
- * just this pose. Requiring the other three curled rules out a fist and the
- * open/two-finger poses, so it can't be confused with them.
+ * Held still off the platter, this toggles 33/45 (ONE-FINGER-HOLD).
+ * Requiring the other three curled rules out a fist and the open/two-finger
+ * poses, so it can't be confused with them.
  */
 export function isPointPose(code: number): boolean {
   return (

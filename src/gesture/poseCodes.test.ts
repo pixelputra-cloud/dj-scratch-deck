@@ -12,6 +12,7 @@ import {
   isTwoFingerPose,
   poseCode,
   poseName,
+  twoFingerCentroid,
   type Point,
 } from './poseCodes'
 
@@ -180,5 +181,14 @@ describe('fingertipsCentroid', () => {
     expect(c.y).toBeCloseTo(my, 9)
     // sits above the palm centroid (finger tips are further from the wrist)
     expect(c.y).toBeLessThan(handCentroid(lm).y)
+  })
+})
+
+describe('twoFingerCentroid', () => {
+  it('is the mean of the index and middle tips only', () => {
+    const lm = hand({ index: true, middle: true })
+    const c = twoFingerCentroid(lm)
+    expect(c.x).toBeCloseTo((lm[8].x + lm[12].x) / 2, 9)
+    expect(c.y).toBeCloseTo((lm[8].y + lm[12].y) / 2, 9)
   })
 })

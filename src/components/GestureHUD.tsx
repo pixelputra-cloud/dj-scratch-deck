@@ -7,9 +7,9 @@ import { useDeckStore } from '../state/useDeckStore'
  */
 const VOCAB = [
   ['SCRATCH', 'open hand over the platter — drives the record'],
-  ['POINT-PITCH', 'point with one finger, move up/down — rides the pitch fader'],
+  ['TWO-FINGER-PITCH', 'index + middle, move left/right — rides the pitch fader'],
   ['FIST-HOLD', 'make a fist off the platter, held still — start / stop'],
-  ['TWO-FINGER-HOLD', 'index + middle, held still — 33 / 45'],
+  ['ONE-FINGER-HOLD', 'point with one finger, held still — 33 / 45'],
 ] as const
 
 export function GesturePanel() {
@@ -43,7 +43,7 @@ export function GesturePanel() {
       {cameraState === 'on' ? (
         <div className="tt-hud__active">
           <span data-on={active.scratch}>SCRATCH</span>
-          <span data-on={active.point}>PITCH</span>
+          <span data-on={active.pitch}>PITCH</span>
           <span data-on={!!active.dwell}>{active.dwell ?? 'DWELL'}</span>
         </div>
       ) : null}

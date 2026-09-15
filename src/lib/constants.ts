@@ -38,27 +38,22 @@ export const GESTURE_COOLDOWN_MS = 500
  *  the 3-frame exit still guards against a dropped detection mid-scratch. */
 export const SCRATCH_ENTER_FRAMES = 1
 export const SCRATCH_EXIT_FRAMES = 3
-/** POINT-PITCH engages the instant the pose (index out, others curled) is
- *  seen — no distance/contact test — and, like SCRATCH_EXIT_FRAMES, rides
- *  through this many consecutive dropped-pose frames before releasing, so a
- *  single misread finger doesn't drop the drag mid-move. */
-export const PITCH_POINT_EXIT_FRAMES = 3
-/** pitch-% per unit of vertical hand travel, per % of the active pitch range
- *  — i.e. gain = pitchRange × this. Scaling by range means the same
+/** TWO-FINGER-PITCH engages the instant the pose (index + middle extended,
+ *  ring/pinky curled) is seen, and, like SCRATCH_EXIT_FRAMES, rides through
+ *  this many consecutive dropped-pose frames before releasing, so a single
+ *  misread finger doesn't drop the drag mid-move. */
+export const PITCH_DRAG_EXIT_FRAMES = 3
+/** pitch-% per unit of horizontal hand travel, per % of the active pitch
+ *  range — i.e. gain = pitchRange × this. Scaling by range means the same
  *  comfortable hand movement always sweeps the *whole* fader, at ±8 or ±16
- *  alike (a flat gain made ±16 need twice the travel of ±8). Raised from
- *  6.25 — the first pass erred toward a small, precise movement and read as
- *  sluggish; ~0.25 of frame height for the full swing feels more direct. */
+ *  alike (a flat gain made ±16 need twice the travel of ±8). */
 export const PITCH_GESTURE_GAIN = 8
-/** One Euro filter on the tracked index-tip Y. The first pass (1.4 Hz /
- *  0.25) erred toward smoothness and felt laggy — the low `beta` meant the
- *  cutoff barely rose even while the hand was genuinely moving, so the
- *  filter kept damping real motion, not just jitter. Raised `beta` a lot
- *  (the filter's whole job is low-jitter-when-still + low-lag-when-moving;
- *  a low beta only gets the first half) and `dCutoff` too, so the velocity
- *  estimate itself reacts faster instead of lagging the raw motion by a
- *  frame or two. Still gentler than the scratch filter — pitch wants a
- *  steady hold at rest, scratch never does — just not this gentle. */
+/** One Euro filter on the tracked two-finger-centroid X. `beta` is what
+ *  lets the cutoff rise with hand velocity so real motion passes through
+ *  with little lag while a still hand stays smooth — a first pass with beta
+ *  too low read as sluggish (see PROJECT_STATUS.md). Still gentler than the
+ *  scratch filter — pitch wants a steady hold at rest, scratch never does —
+ *  just not sluggish-gentle. */
 export const PITCH_ONE_EURO_MIN_CUTOFF = 2.5 // Hz
 export const PITCH_ONE_EURO_BETA = 0.9
 export const PITCH_ONE_EURO_D_CUTOFF = 1.5 // Hz

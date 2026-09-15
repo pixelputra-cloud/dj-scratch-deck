@@ -30,7 +30,7 @@ export interface HandState {
 
 export interface ActiveGestures {
   scratch: boolean
-  point: boolean
+  pitch: boolean
   dwell: string | null
 }
 
@@ -101,7 +101,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
   cameraState: 'off',
   cameraError: null,
   hands: [],
-  activeGestures: { scratch: false, point: false, dwell: null },
+  activeGestures: { scratch: false, pitch: false, dwell: null },
 
   setPowered: (v) => set({ powered: v }),
   setMotor: (v) => set({ motorOn: v }),

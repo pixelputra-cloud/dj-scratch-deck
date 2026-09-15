@@ -18,9 +18,9 @@ direction (Phase 5) are still open — see [Status](#status).
 | Gesture | Mouse | Does |
 |---|---|---|
 | Open hand over the platter | drag the platter | **scratch** — drives the record, reverse included |
-| Point with one finger, move up/down | drag the pitch fader | **pitch** (±8 / ±16 %) |
+| Index + middle, move left/right | drag the pitch fader | **pitch** (±8 / ±16 %) |
 | Make a fist, hold still off the platter | click **START / STOP** | start / stop the motor |
-| Index + middle, hold still | click **33 / 45** | switch speed |
+| Point with one finger, hold still | click **33 / 45** | switch speed |
 
 ## Run it
 
@@ -122,7 +122,7 @@ node scripts/make_loops.mjs
 | 0 · Scaffold | ✅ Vite 8 + React 19 + TS + Tailwind 4 + Zustand, Vitest, tokens, vendored model/WASM |
 | 1 · Audio engine | ✅ worklet read head, cubic interp, `rate` AudioParam, `TurntableEngine`, physics + tests, power gate |
 | 2 · The deck, visually | ✅ big centred platter, vinyl, machined strobe/marker ring, PNG-faced transport stack, pitch detent; rotation locked to audio; mouse scratch. Redesigned since the PRD: no chassis/tonearm/spindle, camera feed is the full-page background |
-| 3 · Gesture control | ✅ MediaPipe on the main thread, landmark overlay, all four gestures (open-hand SCRATCH, POINT-PITCH, FIST-HOLD start/stop, TWO-FINGER-HOLD speed), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass wants real Chrome + a webcam.** |
+| 3 · Gesture control | ✅ MediaPipe on the main thread, landmark overlay, all four gestures (open-hand SCRATCH, TWO-FINGER-PITCH, FIST-HOLD start/stop, ONE-FINGER-HOLD speed), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass wants real Chrome + a webcam.** |
 | 4 · Crate & uploads | 🟡 crate drawer, manifest, drag-a-card-onto-the-disc, local file drop all work; **bundled tracks are procedural placeholders** |
 | 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); onboarding/keyboard/a11y pass still open |
 

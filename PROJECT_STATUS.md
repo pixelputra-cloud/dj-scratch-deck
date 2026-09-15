@@ -6,8 +6,8 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 39 commits · working tree clean · in sync with `origin/main`
-- **~4,200 lines** TS/TSX in `src/` · **55 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
+- **Branch:** `main` · 40 commits · working tree clean · in sync with `origin/main`
+- **~4,200 lines** TS/TSX in `src/` · **56 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
 ---
@@ -145,12 +145,12 @@ control.
   (electric-cyan, layered ABOVE the deck).
 - Four gestures: **SCRATCH** = open hand over the platter (1-frame enter /
   3-frame exit hysteresis so a dropped detection never drops the record;
-  scratch pivot = mean of the four fingertips); **POINT-PITCH** = a lone
-  pointing index finger, others curled (no pinch/contact — see pivots);
+  scratch pivot = mean of the four fingertips); **TWO-FINGER-PITCH** =
+  index+middle extended, moved left/right (no pinch/contact — see pivots);
   **FIST-HOLD** = closed fist off the platter, still, 700 ms → start/stop;
-  **TWO-FINGER-HOLD** = index+middle, still, 700 ms → 33/45. 700 ms latched
-  dwell (pose must break to re-arm), 500 ms global cooldown, annulus priority,
-  two-hand role assignment.
+  **ONE-FINGER-HOLD** = a lone pointing finger, still, 700 ms → 33/45. 700 ms
+  latched dwell (pose must break to re-arm), 500 ms global cooldown, annulus
+  priority, two-hand role assignment.
 - Scratch response is shaped: `rate = sign(g)·|g|^0.7 · 1.7`, dead-banded and
   clamped, with a raised One Euro filter (3.5 Hz / β 1.2) and a tighter
   audio-side ramp (`RATE_SMOOTHING_TAU_SCRATCH` 0.008) while a hand/pointer is
@@ -164,7 +164,7 @@ control.
   artist / BPM), click-to-load, **drag a card onto the disc to load**, local
   file drop-and-decode (drop on the crate or on the disc), nothing uploaded.
 
-**55 tests:** `platterPhysics`, `oneEuroFilter`, `platterMapping` (±π seam both
+**56 tests:** `platterPhysics`, `oneEuroFilter`, `platterMapping` (±π seam both
 directions), `poseCodes`, `gestureMachine`.
 
 ---
@@ -502,12 +502,14 @@ positioned and stacked:
   target are now the same thing.
 - The landmark overlay is **electric cyan**, layered **above** the deck (z-8)
   rather than behind it — camera feed → platter + markings → hand mapping.
-- **Pitch is now POINT-PITCH, not PINCH-PITCH** — a lone pointing index
-  finger (others curled) drags the fader vertically; the old thumb-index
-  pinch/contact test is gone entirely. The user flagged the pinch as hard to
-  sustain via webcam tracking (three things had to hold at once: finger
-  shape, tight thumb-index distance, AND motion) and asked for a
-  single-pose gesture instead.
+- **Pitch was POINT-PITCH, not PINCH-PITCH** (superseded again below — now
+  TWO-FINGER-PITCH — but the reasoning for dropping the pinch still stands,
+  so kept here) — a lone pointing index finger (others curled) dragged the
+  fader vertically; the old thumb-index pinch/contact test was gone
+  entirely. The user flagged the pinch as hard to sustain via webcam
+  tracking (three things had to hold at once: finger shape, tight
+  thumb-index distance, AND motion) and asked for a single-pose gesture
+  instead.
   - `poseCodes.ts`: `isPinchContext` → **`isPointPose`** (same finger test,
     index out + others curled — just no distance check anymore);
     `pinchDistance()` deleted; `PoseName`'s `'PINCH'` → `'POINT'`; `poseName`
@@ -557,6 +559,53 @@ positioned and stacked:
     describe block deleted; `poseName` calls drop the second argument.
   - Mouse control (`PitchFader.tsx` drag) is **completely unchanged** — this
     only touches the gesture input path.
+
+- **Pitch and speed swapped poses: pitch is now TWO-FINGER-PITCH (index+
+  middle, moved left/right), speed is now ONE-FINGER-HOLD (a lone pointing
+  finger, held still)** — the reverse of the assignment just above. User
+  request, not a bug fix: horizontal index+middle movement for a horizontal
+  fader, freeing up the single-finger pose (a pose MediaPipe reads very
+  reliably) for the dwell/hold gesture instead of a continuous drag.
+  - **No pose-predicate changes** — `isPointPose` and `isTwoFingerPose` in
+    `poseCodes.ts` are exactly what they were; only which *role* in
+    `gestureMachine.ts` each one feeds changed. `isPointPose`'s doc comment
+    updated (it drives 33/45 now, not pitch); `poseName()` is untouched —
+    pose labels are independent of what action a pose happens to trigger.
+  - New `poseCodes.ts` helper: **`twoFingerCentroid(lm)`** — mean of the
+    index (8) and middle (12) tips, same jitter-cutting rationale as
+    `fingertipsCentroid`'s four-point average for scratch. `.x` (already
+    mirrored, so "right on screen" = increasing x) is the drag reference;
+    replaces the old single index-tip `.y` reference.
+  - `gestureMachine.ts`: `HandFSM.pointing/pointY0/pointDisqualify/
+    pointFilter` → **`pitchDragging/pitchX0/pitchDisqualify/pitchFilter`**
+    (renamed off "point" since a pose-agnostic name is more durable — this
+    is the second time the driving pose has changed). Drag trigger switched
+    from `isPointPose` to `isTwoFingerPose`; the dwell candidate switched
+    from `TWO_CODE` (`FINGER.INDEX | FINGER.MIDDLE`) to a new **`ONE_CODE`**
+    (`FINGER.INDEX`); `result.activeDwell` for it is now `'POINT'` (was
+    `'TWO-FINGER'`). The raw delta flips from `(anchorY0 - y)` (up = faster)
+    to `(x - anchorX0)` (right = faster) — a real sign flip, not just a
+    variable rename, to match the horizontal fader and the mouse drag's
+    own "right = faster" convention.
+  - `PITCH_POINT_EXIT_FRAMES` → **`PITCH_DRAG_EXIT_FRAMES`** (same value
+    and role, pose-agnostic name); the gain/filter constants
+    (`PITCH_GESTURE_GAIN`, `PITCH_ONE_EURO_*`) are unchanged in value, only
+    their doc comments now say "horizontal" instead of "vertical".
+  - `ActiveGestures.point` → **`.pitch`** (`useDeckStore.ts`,
+    `deckController.ts`) — same reasoning as the FSM field rename; this
+    flag means "the pitch gesture is active," not "a pointing pose is
+    active," and the field name should say so regardless of which pose
+    happens to drive it this week.
+  - `GestureHUD.tsx` vocab: `TWO-FINGER-PITCH` / `ONE-FINGER-HOLD` entries
+    swapped in; `active.point` → `active.pitch`.
+  - Tests: `gestureMachine.test.ts`'s `POINT-PITCH` describe block →
+    `TWO-FINGER-PITCH`, `ramp()` now moves hand X instead of Y with `TWO`
+    fingers instead of `INDEX_ONLY`; the annulus-block and two-hand-
+    assignment tests switched from `INDEX_ONLY` to `TWO` (they need to
+    exercise the pose that actually drives pitch now); the cooldown test's
+    second dwell switched from `TWO` to `INDEX_ONLY`. `poseCodes.test.ts`
+    gained a `twoFingerCentroid` case. All at parity coverage with before —
+    56 tests total (was 55; the extra is `twoFingerCentroid`'s test).
 
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in
@@ -609,7 +658,7 @@ npm install
 npm run dev            # http://localhost:5173  (camera needs localhost or https)
 npm run build          # tsc -b && vite build -> static dist/  (base '/')
 npm run preview        # serve dist/
-npx vitest run         # 55 tests
+npx vitest run         # 56 tests
 npm run lint           # oxlint
 node scripts/make_loops.mjs   # regenerate the 6 procedural crate loops
 git push              # -> GitHub Actions builds + deploys to Pages (~1 min)
