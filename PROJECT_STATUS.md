@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 40 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 42 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **56 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -99,12 +99,12 @@ src/
     StartButton.tsx SpeedSelector.tsx PitchFader.tsx   PNG-faced transport controls (left stack, <img> src swaps on state)
     SidePanel.tsx                   right-edge tabbed drawer -> CratePanel / GesturePanel
     Crate.tsx (CratePanel) GestureHUD.tsx (GesturePanel) TrackCard.tsx
-    GestureBackdrop.tsx CameraControl.tsx PowerGate.tsx
+    GestureBackdrop.tsx CameraControl.tsx PowerGate.tsx OnboardingOverlay.tsx
   tracks/
     manifest.json loadManifest.ts   bundled crate
     userTrack.ts                     trackFromFile / isAudioFile (shared by Crate + Platter)
     types.ts
-  lib/ constants.ts math.ts asset.ts   PRD Appendix-A constants + pure helpers + base-path asset() resolver
+  lib/ constants.ts math.ts asset.ts gestureVocab.ts   PRD Appendix-A constants + pure helpers + base-path asset() resolver + the shared gesture-vocabulary data (GestureHUD + OnboardingOverlay both read it, so the copy can't drift)
   styles/ tokens.css deck.css
 
 scripts/make_loops.mjs               regenerates the 6 procedural crate loops
@@ -607,6 +607,109 @@ positioned and stacked:
     gained a `twoFingerCentroid` case. All at parity coverage with before —
     56 tests total (was 55; the extra is `twoFingerCentroid`'s test).
 
+### First-run onboarding + a louder camera CTA + a real fix for the ~800px
+### clipping bug + less placeholder-looking crate cards
+Feedback (paraphrased from an external review) on the deployed link, before
+driving real traffic to it: a new visitor doesn't know gestures exist or that
+the crate is hiding behind the side handle; "Enable camera" — the entire
+product — reads as the least prominent thing in the header; the left control
+stack visibly clips around 800px / a resized 13" laptop window; "Deck
+Procedural" as every single crate card's artist undersells the crate. User
+asked for a scope on each, approved it, all four implemented in one pass:
+
+- **`OnboardingOverlay.tsx` (new)** — a one-time "how to play" card, shown the
+  instant `powered` flips true (right after `POWER`, before `START`). Same
+  frosted-glass nameplate recipe as `PowerGate.tsx` (`backdrop-filter: blur()
+  saturate()` over a dark gradient, Michroma display type, amber accents) but
+  without the full-bleed photo — a `rgba(3,3,5,0.72)` + `blur(10px)` scrim
+  over the live deck instead, since the deck should read (dimmed) behind it,
+  not be replaced by it.
+  - **Illustrates all four gestures with small schematic hand icons**, not
+    just text — a `HandIcon` component (inline SVG, `viewBox="0 0 64 64"`)
+    toggles which of index/middle/ring are drawn extended per pose, using
+    **the exact same three bits `isScratchPose` / `isTwoFingerPose` /
+    `isFistPose` / `isPointPose` test** (thumb and pinky are cosmetic-only,
+    always drawn curled, since no predicate cares about them) — so the icons
+    can't silently drift from what the gesture engine actually checks. Styled
+    in the landmark overlay's own colour language (`--landmark` cyan joints,
+    `--landmark-bone` bones) rather than the deck's amber, so the card reads
+    as "this is the hand tracker," not a separate illustration style — same
+    reasoning tokens.css already gives for why the live skeleton overlay is
+    deliberately not amber.
+  - **The gesture copy itself is shared, not duplicated**: `VOCAB` moved out
+    of `GestureHUD.tsx` into a new pure-data module, **`src/lib/
+    gestureVocab.ts`** (`GESTURE_VOCAB`), imported by both `GestureHUD.tsx`
+    and `OnboardingOverlay.tsx`. (Originally just exported `VOCAB` straight
+    from `GestureHUD.tsx` — oxlint's `react/only-export-components` flagged
+    that immediately: a file fast-refresh expects to export only components
+    shouldn't also export a plain constant. The dedicated module is the fix
+    the lint message itself suggests, not a workaround.)
+  - **Includes its own prominent camera CTA** — a big glowing button (reuses
+    the power-gate switch's exact gradient/box-shadow recipe and its
+    `tt-pg-breathe` keyframes, so it's visually "the same kind of ask" as
+    POWER was) that calls the same `enable()` from `useGestureTracking` the
+    header button calls. Clicking it, clicking "Skip — use the mouse
+    instead," clicking the × close, or the camera turning on by any other
+    route (e.g. the header button, if the visitor ignores the card and uses
+    that instead) all dismiss the card the same way.
+  - **Dismissal is a `localStorage` flag (`scratch-deck:onboarding-seen`),
+    not store state** — this is the first thing in the project that touches
+    `localStorage` at all. Deliberately NOT in `useDeckStore`: nothing else
+    in the app needs to know "has this browser seen onboarding," so it stays
+    local to the component, read once via lazy `useState` init and written
+    through a pair of try/catch'd helpers (private browsing / storage-
+    disabled just means it shows every time, never a thrown error).
+  - `App.tsx`: rendered once, next to `<PowerGate />`, passed `onEnableCamera
+    ={enable}` (the same handle `<CameraControl>` already gets).
+- **Camera header button gets a subtle idle pulse** — `.tt-camctl[data-
+    state='off']` (the default/idle state) now animates a soft amber
+  border+glow (`tt-camctl-pulse`, 2.6s, `@media (prefers-reduced-motion: no-
+  preference)`-gated) instead of sitting flat grey. **No size/padding/font
+  change** — same footprint as every other camera state, purely a colour/
+  glow nudge, per the ask ("keep the same size").
+- **Mobile breakpoint widened `700px` → `900px`** (`deck.css`'s one big
+  `@media (max-width: …)` block, plus `SidePanel.tsx`'s matching
+  `isNarrowViewport()` query — **both had to move together**, or the side
+  panel would default-open as an 80vw desktop drawer at a width where the
+  disc+controls are already in the mobile stacked layout, covering most of
+  the screen). This is a real fix, not just "make the number bigger until it
+  looks fine" — the desktop floating-stack formula
+  (`.tt-deck__controls`'s `right:`/`transform: scale(clamp(0.5, (gutter -
+  24px) / 342px, 1))`) has an exact, derivable failure point: once the
+  clamp's 0.5 floor engages (gutter < 195px), the stack's *left* edge
+  position is `gutter - 185` px from the viewport's left edge — **which goes
+  negative (genuine off-screen clipping) below a gutter of 185px, i.e.
+  roughly under 787px viewport width at this disc formula (53vw)** — and even
+  the *unfloored* case (gutter ≥ 195px) only ever gives a flat, constant
+  **10px** margin once you work through the algebra (`(gutter - 14) -
+  342·((gutter - 24)/342) = 10`, independent of gutter) — uncomfortably tight
+  for something that isn't supposed to be at the mobile breakpoint at all.
+  This is exactly what the "pitch readout half cut off around 800px" report
+  was seeing. The old `700px` threshold left a real ~787px-wide clipping
+  band plus a much wider uncomfortably-tight band sitting *above* it,
+  entirely inside the "desktop" layout's territory. Verified live (not just
+  computed from the formula): at 798px and 850px wide the deck now renders
+  in the proven mobile stacked layout, centred with a wide, comfortable
+  margin either side (no negative numbers involved at all); at 920px — just
+  above the new threshold — the pitch readout's left edge measures exactly
+  10px from the viewport edge, matching the algebra above and confirming the
+  desktop floating layout is healthy again past the new boundary. The old,
+  now-fully-superseded `@media (max-width: 820px) { .tt-panel__body {…} }`
+  tablet-only drawer-shrink rule (a narrower, no-longer-needed half-measure
+  for the 700–820px band) was deleted rather than left dead; the unrelated
+  height-based `@media (max-height: 620px)` rule stays, since it's orthogonal
+  to this width fix.
+- **Crate artist field**: `manifest.json`'s six bundled loops all had `"artist":
+  "Deck Procedural"` — literally the same string on every card, which read as
+  an obviously-generated placeholder rather than a curated crate. Swapped in
+  six distinct, genre-fitting fictional names (Crate Diggers / Break Lab /
+  Warehouse Nine / Stab City / Sublow Society / Pocket Change for the boom-
+  bap / breaks / house / orchestral-stab / DnB / funk loops respectively).
+  Content-only change, zero code touched, zero risk — **not** a substitute
+  for Phase 4's real licensed-track work, just the interim patch worth doing
+  before the "Deck Procedural" ×6 pattern was the first thing a stranger's
+  eye would catch in the crate.
+
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in
   `deckRuntime` (mutable object, read via ref) per the PRD's own §10 note.
@@ -666,8 +769,9 @@ Appendix-A constants; static build, no backend, no accounts, vendored model/WASM
   answers (or reframes) those two questions.
 - **Phase 4** — real licence-verified crate; waveform overview if wanted back;
   attribution credits UI.
-- **Phase 5** — onboarding overlay teaching the gestures, keyboard shortcuts,
-  accessibility pass, theme exploration via `tokens.css`.
+- **Phase 5** — first-run onboarding is now built (see pivots); keyboard
+  shortcuts, a full accessibility pass, and theme exploration via
+  `tokens.css` are still open.
 - **Track import beyond local files** — see the conversation analysis
   (persistence via IndexedDB/OPFS, URL paste, Jamendo).
 - **Real "does it feel right" gesture testing** — needs Chrome + a webcam;

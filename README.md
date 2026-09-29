@@ -124,7 +124,7 @@ node scripts/make_loops.mjs
 | 2 · The deck, visually | ✅ big centred platter, vinyl, machined strobe/marker ring, PNG-faced transport stack, pitch detent; rotation locked to audio; mouse scratch. Redesigned since the PRD: no chassis/tonearm/spindle, camera feed is the full-page background |
 | 3 · Gesture control | ✅ MediaPipe on the main thread, landmark overlay, all four gestures (open-hand SCRATCH, TWO-FINGER-PITCH, FIST-HOLD start/stop, ONE-FINGER-HOLD speed), disambiguation + two-hand assignment, HUD. **Logic unit-tested; the "does it feel right" pass wants real Chrome + a webcam.** |
 | 4 · Crate & uploads | 🟡 crate drawer, manifest, drag-a-card-onto-the-disc, local file drop all work; **bundled tracks are procedural placeholders** |
-| 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); onboarding/keyboard/a11y pass still open |
+| 5 · Polish & art direction | 🟡 disc + transport art done (supplied PNGs, token layer); first-run onboarding overlay done; keyboard/a11y pass still open |
 
 ## Browser targets
 

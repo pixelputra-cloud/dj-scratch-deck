@@ -494,6 +494,29 @@
   border-radius: 50%;
   background: var(--text-faint);
 }
+.tt-camctl[data-state='off'] {
+  /* this is the least prominent-looking control for the biggest thing the
+     app does — a slow amber pulse (same colour language as the powergate
+     switch's breathe animation) is the nudge that it deserves a look, at
+     the same padding/font-size as every other state so it never jostles
+     the header layout. */
+  border-color: rgba(255, 158, 61, 0.45);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tt-camctl[data-state='off'] {
+    animation: tt-camctl-pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes tt-camctl-pulse {
+    0%, 100% {
+      border-color: rgba(255, 158, 61, 0.4);
+      box-shadow: 0 0 0 0 rgba(255, 158, 61, 0);
+    }
+    50% {
+      border-color: var(--backlight);
+      box-shadow: 0 0 14px 1px rgba(255, 158, 61, 0.5);
+    }
+  }
+}
 .tt-camctl[data-state='on'] {
   color: var(--text-primary);
   border-color: var(--backlight);
@@ -1150,21 +1173,234 @@
   }
 }
 
-/* ===================== responsive / mobile ===================== */
+/* ===================== onboarding overlay ===================== */
+/* one-time "how to play" card, right after POWER — same frosted-glass
+   nameplate language as the power gate, minus the full-bleed photo (the deck
+   should still read, dimmed, behind it). See OnboardingOverlay.tsx for why
+   dismissal is a localStorage flag, not store state. */
 
-@media (max-width: 820px) {
-  .tt-panel__body {
-    width: min(80vw, 300px);
-    max-height: 70vh;
+.tt-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 45; /* above the panel (40) and header (30); below the power gate (50), though the two never coexist */
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgba(3, 3, 5, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.tt-onboarding__panel {
+  position: relative;
+  width: min(640px, 92vw);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 36px 34px 30px;
+  text-align: center;
+  border-radius: 20px;
+  background:
+    radial-gradient(150% 90% at 50% -14%, rgba(60, 232, 250, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(17, 17, 21, 0.94), rgba(8, 8, 10, 0.97));
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 60px 100px -34px rgba(0, 0, 0, 0.85);
+}
+
+.tt-onboarding__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--hud-border);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tt-onboarding__close:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.tt-onboarding__eyebrow {
+  margin: 0 0 10px;
+  font-family: 'Michroma', 'Segoe UI', system-ui, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tt-onboarding__title {
+  margin: 0 0 10px;
+  font-family: 'Michroma', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(17px, 3.6vw, 22px);
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+.tt-onboarding__lede {
+  margin: 0 auto 24px;
+  max-width: 46ch;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.tt-onboarding__gestures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin: 0 0 26px;
+}
+.tt-onboarding__gesture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 16px 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--hud-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tt-onboarding__icon {
+  width: 46px;
+  height: 46px;
+  margin-bottom: 2px;
+}
+/* same visual language as the live landmark skeleton — cyan joints/bones,
+   deliberately not the deck's amber, so this reads as "the hand tracker,"
+   not a separate illustration */
+.tt-onboarding__palm {
+  fill: rgba(60, 232, 250, 0.08);
+  stroke: var(--landmark-bone);
+  stroke-width: 1.2;
+}
+.tt-onboarding__bone {
+  stroke: var(--landmark-bone);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.tt-onboarding__joint {
+  fill: var(--landmark);
+}
+.tt-onboarding__joint--curled {
+  fill: var(--text-faint);
+}
+.tt-onboarding__gesture-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  color: var(--backlight);
+}
+.tt-onboarding__gesture-desc {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.tt-onboarding__gesture-motion {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--landmark);
+}
+
+.tt-onboarding__cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  border-radius: 12px;
+  border: 0;
+  color: #fff;
+  font: 800 12px/1 'Michroma', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background:
+    radial-gradient(120% 140% at 50% -20%, rgba(255, 158, 61, 0.35), transparent 60%),
+    linear-gradient(180deg, #3a3d43, #26282d 46%, #1c1e22 54%, #2c2f34);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 -3px 6px rgba(0, 0, 0, 0.5) inset,
+    0 0 0 1px rgba(255, 158, 61, 0.55),
+    0 0 26px rgba(255, 158, 61, 0.24),
+    0 8px 18px -6px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 0.2s ease, transform 90ms ease;
+}
+.tt-onboarding__cta:hover {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 -3px 6px rgba(0, 0, 0, 0.5) inset,
+    0 0 0 1px var(--backlight),
+    0 0 38px rgba(255, 158, 61, 0.45),
+    0 8px 18px -6px rgba(0, 0, 0, 0.6);
+}
+.tt-onboarding__cta:active {
+  transform: translateY(2px);
+}
+.tt-onboarding__cta-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd9ac, var(--backlight) 60%, #b5621c);
+  box-shadow: 0 0 10px var(--glow), 0 0 2px #fff inset;
+}
+/* reuses the power gate's own breathe keyframes (declared alongside it,
+   under the same media guard) — same call-to-action language everywhere
+   the app asks for POWER/camera */
+@media (prefers-reduced-motion: no-preference) {
+  .tt-onboarding__cta {
+    animation: tt-pg-breathe 3.4s ease-in-out 0.6s infinite;
+  }
+  .tt-onboarding__panel {
+    animation: tt-pg-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
+
+.tt-onboarding__skip {
+  display: block;
+  margin: 14px auto 0;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.tt-onboarding__skip:hover {
+  color: var(--text-primary);
+}
+.tt-onboarding__footnote {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* ===================== responsive / mobile ===================== */
+
 @media (max-height: 620px) {
   .tt-panel__body {
     max-height: 82vh;
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   /* -- header: wraps to a second row and shrinks; nothing gets clipped -- */
   .tt-app__header {
     flex-wrap: wrap;

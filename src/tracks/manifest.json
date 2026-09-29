@@ -4,7 +4,7 @@
     {
       "id": "boombap-90",
       "title": "Dusty Corner",
-      "artist": "Deck Procedural",
+      "artist": "Crate Diggers",
       "bpm": 90,
       "file": "/audio/boombap-90.wav",
       "labelColor": "#c8452e",
@@ -15,7 +15,7 @@
     {
       "id": "amen-140",
       "title": "Chop Shop",
-      "artist": "Deck Procedural",
+      "artist": "Break Lab",
       "bpm": 140,
       "file": "/audio/amen-140.wav",
       "labelColor": "#e0a92e",
@@ -26,7 +26,7 @@
     {
       "id": "house-124",
       "title": "Basement Floor",
-      "artist": "Deck Procedural",
+      "artist": "Warehouse Nine",
       "bpm": 124,
       "file": "/audio/house-124.wav",
       "labelColor": "#3f8f7a",
@@ -37,7 +37,7 @@
     {
       "id": "stabs-96",
       "title": "Orchestra Hit",
-      "artist": "Deck Procedural",
+      "artist": "Stab City",
       "bpm": 96,
       "file": "/audio/stabs-96.wav",
       "labelColor": "#7a5bd0",
@@ -48,7 +48,7 @@
     {
       "id": "dnb-172",
       "title": "Rollage",
-      "artist": "Deck Procedural",
+      "artist": "Sublow Society",
       "bpm": 172,
       "file": "/audio/dnb-172.wav",
       "labelColor": "#4a7ad0",
@@ -59,7 +59,7 @@
     {
       "id": "funk-100",
       "title": "Ghost Notes",
-      "artist": "Deck Procedural",
+      "artist": "Pocket Change",
       "bpm": 100,
       "file": "/audio/funk-100.wav",
       "labelColor": "#d0672e",

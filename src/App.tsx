@@ -3,6 +3,7 @@ import './index.css'
 import { CameraControl } from './components/CameraControl'
 import { Deck } from './components/Deck'
 import { GestureBackdrop } from './components/GestureBackdrop'
+import { OnboardingOverlay } from './components/OnboardingOverlay'
 import { PowerGate } from './components/PowerGate'
 import { SidePanel } from './components/SidePanel'
 import { useGestureTracking } from './gesture/useGestureTracking'
@@ -63,6 +64,7 @@ export default function App() {
       <SidePanel />
 
       <PowerGate />
+      <OnboardingOverlay onEnableCamera={enable} />
     </div>
   )
 }

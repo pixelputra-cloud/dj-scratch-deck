@@ -1,3 +1,4 @@
+import { GESTURE_VOCAB } from '../lib/gestureVocab'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
@@ -5,12 +6,6 @@ import { useDeckStore } from '../state/useDeckStore'
  * control / dwell progress when the camera is live (PRD §6.5), plus the
  * gesture vocabulary.
  */
-const VOCAB = [
-  ['SCRATCH', 'open hand over the platter — drives the record'],
-  ['TWO-FINGER-PITCH', 'index + middle, move left/right — rides the pitch fader'],
-  ['FIST-HOLD', 'make a fist off the platter, held still — start / stop'],
-  ['ONE-FINGER-HOLD', 'point with one finger, held still — 33 / 45'],
-] as const
 
 export function GesturePanel() {
   const hands = useDeckStore((s) => s.hands)
@@ -49,7 +44,7 @@ export function GesturePanel() {
       ) : null}
 
       <ul className="tt-hud__vocab">
-        {VOCAB.map(([name, desc]) => (
+        {GESTURE_VOCAB.map(([name, desc]) => (
           <li key={name}>
             <b>{name}</b>
             <span>{desc}</span>

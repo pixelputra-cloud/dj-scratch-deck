@@ -5,10 +5,10 @@ import { GesturePanel } from './GestureHUD'
 
 type Tab = 'crate' | 'gestures'
 
-/** Matches the deck.css mobile breakpoint (`@media (max-width: 700px)`). */
+/** Matches the deck.css mobile breakpoint (`@media (max-width: 900px)`). */
 const isNarrowViewport = () =>
   typeof window !== 'undefined' &&
-  window.matchMedia('(max-width: 700px)').matches
+  window.matchMedia('(max-width: 900px)').matches
 
 /**
  * One right-edge drawer holding both the crate and the gesture info as tabs.
