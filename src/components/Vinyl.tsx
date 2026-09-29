@@ -1,4 +1,4 @@
-import { forwardRef, useMemo } from 'react'
+import { forwardRef, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useDeckStore } from '../state/useDeckStore'
 
 /**
@@ -15,12 +15,66 @@ const BEZEL_TICKS = 72
 const GROOVE_INNER = 19.5
 const GROOVE_OUTER = 48
 const GROOVE_STEP = 0.82
+/** hard safety cap before the real (path-length) fit runs — just bounds the
+ *  measure/trim loop below for pathological input (a long local filename),
+ *  not the actual on-label limit. */
+const LABEL_TEXT_SAFETY_CAP = 60
+
+/**
+ * Shrinks `full` (already React-rendered, once, as the textPath's content)
+ * down until it fits the arc it's painted on. Center-anchored curved SVG
+ * text has no wrap/ellipsis of its own — a string longer than the path's
+ * rendered length doesn't get clipped symmetrically the way plain HTML text-
+ * overflow would; at least Chromium simply stops drawing glyphs once their
+ * position falls outside [0, path length], which — combined with `text-
+ * anchor="middle"` centering the whole run on the path — chops characters
+ * off BOTH ends ("Basement Floor" -> "asement Floo"). Measuring the actual
+ * rendered length (font/weight/letter-spacing-accurate, unlike a guessed
+ * char count) and trimming from the end instead keeps the first character
+ * always visible and only ever truncates the tail.
+ */
+function useFitTextToPath(
+  full: string,
+  pathRef: React.RefObject<SVGPathElement | null>,
+  textPathRef: React.RefObject<SVGTextPathElement | null>,
+): string {
+  const [fitted, setFitted] = useState(full)
+
+  useLayoutEffect(() => {
+    const pathEl = pathRef.current
+    const tpEl = textPathRef.current
+    if (!pathEl || !tpEl) {
+      setFitted(full)
+      return
+    }
+    const maxLen = pathEl.getTotalLength() * 0.96 // small safety margin
+    let s = full
+    tpEl.textContent = s
+    for (let cut = 1; cut <= full.length && tpEl.getComputedTextLength() > maxLen; cut++) {
+      s = `${full.slice(0, full.length - cut).trimEnd()}…`
+      tpEl.textContent = s
+    }
+    setFitted(s)
+    // pathRef/textPathRef are stable refs; only the source string matters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [full])
+
+  return fitted
+}
 
 export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
   const track = useDeckStore((s) => s.loadedTrack)
   const accent = track?.labelColor ?? 'var(--label-accent)'
-  const title = (track?.title ?? 'NO DISC').toUpperCase().slice(0, 18)
-  const artist = (track?.artist ?? 'load a track').slice(0, 22)
+  const fullTitle = (track?.title ?? 'NO DISC').toUpperCase().slice(0, LABEL_TEXT_SAFETY_CAP)
+  const fullArtist = (track?.artist ?? 'load a track').slice(0, LABEL_TEXT_SAFETY_CAP)
+
+  const titlePathRef = useRef<SVGPathElement>(null)
+  const titleTextPathRef = useRef<SVGTextPathElement>(null)
+  const artistPathRef = useRef<SVGPathElement>(null)
+  const artistTextPathRef = useRef<SVGTextPathElement>(null)
+
+  const title = useFitTextToPath(fullTitle, titlePathRef, titleTextPathRef)
+  const artist = useFitTextToPath(fullArtist, artistPathRef, artistTextPathRef)
 
   /** evenly-spaced concentric grooves; every 8th sits in a slightly wider
    *  "band gap" so the surface reads like a record without any noise. */
@@ -55,8 +109,8 @@ export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
           <stop offset="100%" stopColor="#c3a978" />
         </radialGradient>
         {/* left->right arcs; title bulges up, artist bulges down */}
-        <path id="vinylTitleArc" d="M 38.6 50 A 11.4 11.4 0 0 1 61.4 50" fill="none" />
-        <path id="vinylArtistArc" d="M 39 51.6 A 11 11 0 0 0 61 51.6" fill="none" />
+        <path ref={titlePathRef} id="vinylTitleArc" d="M 38.6 50 A 11.4 11.4 0 0 1 61.4 50" fill="none" />
+        <path ref={artistPathRef} id="vinylArtistArc" d="M 39 51.6 A 11 11 0 0 0 61 51.6" fill="none" />
       </defs>
 
       <g ref={ref}>
@@ -103,12 +157,22 @@ export const Vinyl = forwardRef<SVGGElement>(function Vinyl(_props, ref) {
 
         {/* curved title / artist */}
         <text className="tt-vinyl__title" fill="#2a1b09">
-          <textPath href="#vinylTitleArc" startOffset="50%" textAnchor="middle">
+          <textPath
+            ref={titleTextPathRef}
+            href="#vinylTitleArc"
+            startOffset="50%"
+            textAnchor="middle"
+          >
             {title}
           </textPath>
         </text>
         <text className="tt-vinyl__artist" fill="#5a4327">
-          <textPath href="#vinylArtistArc" startOffset="50%" textAnchor="middle">
+          <textPath
+            ref={artistTextPathRef}
+            href="#vinylArtistArc"
+            startOffset="50%"
+            textAnchor="middle"
+          >
             {artist}
           </textPath>
         </text>

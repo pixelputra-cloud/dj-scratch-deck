@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 44 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 45 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **56 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -761,6 +761,50 @@ finger mechanics in words.
   HOLD has one clear extended line — confirmed live in the browser at both
   desktop and a 400px-wide mobile card layout (the `auto-fit` gesture grid
   collapses to one column there for free, no dedicated breakpoint needed).
+
+### Vinyl centre-label text was silently losing its first AND last letter on
+### longer titles ("Basement Floor" -> "asement Floo")
+Root cause, found by reading the actual rendering path rather than guessing:
+`Vinyl.tsx`'s title/artist are curved SVG text — `<textPath href="#vinylTitleArc"
+startOffset="50%" textAnchor="middle">` painted along a fixed-length arc
+`<path>`. `textAnchor="middle"` centres the *whole rendered run* on the 50%
+point of the path; if the text's actual rendered length is longer than the
+arc's own geometric length, the centred run extends past both ends of the
+arc. SVG's `textPath` has no wrap or clip of its own for that case — and (at
+least in Chromium) once a glyph's position falls outside `[0, path length]`
+it simply isn't drawn, rather than being extrapolated past the path's end
+(which is what e.g. Firefox does). Combined with centring, that drops
+characters off **both** ends symmetrically — exactly the reported symptom.
+The old code's fixed `.slice(0, 18)` / `.slice(0, 22)` char caps were a
+guess at "safe" length that didn't account for the actual arc length, font,
+weight, or per-track letter-spacing, so anything close to or past that guess
+(most real titles) hit the bug.
+- **Fix measures instead of guessing.** New `useFitTextToPath` hook in
+  `Vinyl.tsx`: refs on the arc `<path>` and its `<textPath>`, a
+  `useLayoutEffect` that reads `pathEl.getTotalLength()` and
+  `textPathEl.getComputedTextLength()` — the actual rendered length, correct
+  for whatever font/weight/letter-spacing is in effect, not a hand-tuned
+  estimate — and, only if the text doesn't fit (× a 0.96 safety margin),
+  trims one character at a time off the **end** (appending `…`) and
+  re-measures until it does. `textAnchor="middle"` is untouched — short
+  titles/artists (the common case; most of the bundled crate) still render
+  full-length and centred exactly as before, byte-for-byte unchanged. Only
+  strings that would have overflowed the arc are touched, and now only the
+  tail is ever cut — the first character is always visible.
+  - `.slice(0, 18)` / `.slice(0, 22)` replaced by one shared
+    `LABEL_TEXT_SAFETY_CAP = 60` — no longer the real limit (the path-length
+    measurement is), just a sane bound on the trim loop's worst case (a long
+    local-file title, say) before the arc-fit takes over.
+  - The imperative DOM writes (`textPathEl.textContent = …` during the
+    trial-and-error measuring loop) happen inside `useLayoutEffect`, so the
+    correct, already-fitted text is what actually gets painted — the
+    subsequent `setFitted(...)` that brings React's state back in sync with
+    the DOM is a same-value reconciliation, not a visible second frame.
+  - Verified live (not just reasoned from the SVG spec): "Basement Floor"
+    now reads **"BASEMENT FL…"** — first letter intact, tail truncated —
+    where it previously read "ASEMENT FLOO" with both ends chopped; short
+    titles/artists ("Dusty Corner", "Rollage" / "Sublow Society") are
+    confirmed byte-identical to before, full text, centred, no truncation.
 
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in
