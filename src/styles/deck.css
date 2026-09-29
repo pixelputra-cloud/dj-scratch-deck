@@ -1268,13 +1268,17 @@
 .tt-onboarding__icon-stage {
   display: grid;
   place-items: center;
-  width: 100%;
+  width: 132px;
   padding: 8px 0 4px;
   border-radius: 10px;
+  /* fixed px radii (not %) so the glow stays a tight circle hugging the
+     icon regardless of the card's own width, instead of stretching into a
+     wide flat oval on a wider card */
   background: radial-gradient(
-    120% 120% at 50% 30%,
-    rgba(60, 232, 250, 0.10),
-    transparent 70%
+    52px 52px at 50% 44%,
+    rgba(154, 243, 255, 0.45),
+    rgba(60, 232, 250, 0.24) 50%,
+    transparent 78%
   );
 }
 .tt-onboarding__icon {
