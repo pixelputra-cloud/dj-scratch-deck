@@ -784,16 +784,6 @@
   flex-direction: column;
   gap: 5px;
 }
-.tt-crate__now {
-  margin: 2px 0 0;
-  padding-top: 6px;
-  border-top: 1px solid var(--hud-border);
-  font-size: 11px;
-  color: var(--backlight);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .tt-card {
   --card-accent: var(--label-accent);

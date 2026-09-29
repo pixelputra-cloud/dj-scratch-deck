@@ -12,7 +12,6 @@ export function CratePanel() {
   const crate = useDeckStore((s) => s.crate)
   const addUserTracks = useDeckStore((s) => s.addUserTracks)
   const loadError = useDeckStore((s) => s.loadError)
-  const loadedTitle = useDeckStore((s) => s.loadedTrack?.title ?? null)
   const fileInput = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
 
@@ -66,8 +65,6 @@ export function CratePanel() {
           <TrackCard key={t.id} track={t} />
         ))}
       </div>
-
-      {loadedTitle ? <p className="tt-crate__now">▶ {loadedTitle}</p> : null}
     </div>
   )
 }
