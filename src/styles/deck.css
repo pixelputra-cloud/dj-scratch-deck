@@ -1265,25 +1265,10 @@
 /* a faintly-lit stage behind the icon — the illustrated hand art is a dark
    silhouette (see public/gestures/*.svg), so it needs a touch more contrast
    than the card's own near-black background gives it on its own */
-.tt-onboarding__icon-stage {
-  display: grid;
-  place-items: center;
-  width: 132px;
-  padding: 8px 0 4px;
-  border-radius: 10px;
-  /* fixed px radii (not %) so the glow stays a tight circle hugging the
-     icon regardless of the card's own width, instead of stretching into a
-     wide flat oval on a wider card */
-  background: radial-gradient(
-    52px 52px at 50% 44%,
-    rgba(154, 243, 255, 0.45),
-    rgba(60, 232, 250, 0.24) 50%,
-    transparent 78%
-  );
-}
 .tt-onboarding__icon {
   height: 62px;
   width: auto;
+  margin: 8px 0 6px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 .tt-onboarding__gesture-name {

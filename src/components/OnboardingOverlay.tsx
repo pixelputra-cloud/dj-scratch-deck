@@ -100,14 +100,12 @@ export function OnboardingOverlay({ onEnableCamera }: { onEnableCamera: () => vo
         <div className="tt-onboarding__gestures">
           {GESTURE_VOCAB.map(([name]) => (
             <div className="tt-onboarding__gesture" key={name}>
-              <span className="tt-onboarding__icon-stage">
-                <img
-                  className="tt-onboarding__icon"
-                  src={asset(ICON_BY_GESTURE[name])}
-                  alt=""
-                  draggable={false}
-                />
-              </span>
+              <img
+                className="tt-onboarding__icon"
+                src={asset(ICON_BY_GESTURE[name])}
+                alt=""
+                draggable={false}
+              />
               <span className="tt-onboarding__gesture-name">{name}</span>
               <span className="tt-onboarding__gesture-result">
                 {RESULT_BY_GESTURE[name]}
