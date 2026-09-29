@@ -6,7 +6,7 @@ original spec; this file records what was actually built and where it diverged.
 
 - **Local:** `E:\Claude_Matrix\dj_turntable` · single-page static web app · no backend, no accounts
 - **GitHub:** <https://github.com/pixelputra-cloud/dj-scratch-deck> (public) · **Live:** <https://pixelputra-cloud.github.io/dj-scratch-deck/>
-- **Branch:** `main` · 42 commits · working tree clean · in sync with `origin/main`
+- **Branch:** `main` · 44 commits · working tree clean · in sync with `origin/main`
 - **~4,200 lines** TS/TSX in `src/` · **56 unit tests** passing · `npm run build` + `npm run lint` green · auto-deploys to GitHub Pages on push
 - **Original PRD phases 0–3 are done** (scaffold, audio engine, visual deck, gesture control) and the MVP is deployed. Phases 4–5 (curated crate, art-direction polish) are not.
 
@@ -709,6 +709,58 @@ asked for a scope on each, approved it, all four implemented in one pass:
   for Phase 4's real licensed-track work, just the interim patch worth doing
   before the "Deck Procedural" ×6 pattern was the first thing a stranger's
   eye would catch in the crate.
+
+### Onboarding card: user-supplied hand illustrations replace the hand-drawn
+### SVG icons, copy trimmed to icon + result only
+Follow-up to the onboarding card above. The user supplied four illustrated
+hand SVGs (`assets/Scratch_Gesture.svg`, `Two-Finger Pitch_Gesture.svg`,
+`Fist-Hold_Gesture.svg`, `One-Finger_Gesture.svg` — a black hand-silhouette
+path plus `#1FE8C0` teal joint dots/bones per pose) to use instead of the
+original hand-drawn `HandIcon` component, and asked for the card copy to be
+trimmed: it read as too wordy, and since the new art is "more visually
+illustrative," the per-gesture description no longer needs to spell out hand/
+finger mechanics in words.
+- **Vendored as `public/gestures/{scratch,two-finger-pitch,fist-hold,
+  one-finger-hold}.svg`** (renamed from the spaced/capitalised source
+  filenames in `assets/` to the project's kebab-case convention), loaded via
+  `<img src={asset('gestures/…')}>` — plain static image assets, same
+  pattern as `public/controls/*.png`, not CSS-token-driven (that rule in
+  `tokens.css` is about colours a *component* draws, not a vendored image's
+  own baked-in fills — same reasoning already applied to the transport-
+  control PNGs and the power-gate photo).
+- **`OnboardingOverlay.tsx`'s old `HandIcon` component, `EXTENDED`,
+  `FINGER_GEOM`, `PALM`/`WRIST` constants, and the `Pose` type are gone
+  entirely** — replaced by a plain `ICON_BY_GESTURE` filename map. The
+  matching CSS (`.tt-onboarding__palm/__bone/__joint`) is gone too; a new
+  `.tt-onboarding__icon-stage` (a faint radial cyan glow chip behind each
+  icon) was added instead, because the new art's hand shape is a *solid
+  black fill* with no stroke — against the card's own near-black background
+  it read as nearly invisible without a touch more contrast behind it.
+  Confirmed visually in the browser before settling on this rather than
+  guessing from the SVG source alone.
+- **Card copy cut to icon + name + one short result-only line per gesture** —
+  a new `RESULT_BY_GESTURE` map (`"Drives the record"`, `"Rides the pitch
+  fader"`, `"Starts and stops the motor"`, `"Switches 33 ⁄ 45"`), replacing
+  both the old hand-mechanics description *and* the separate motion-glyph
+  line (↻ / ⇄ / ⏱) — two lines of text collapsed into one. **Deliberately
+  NOT a change to `GESTURE_VOCAB`'s own descriptions** — those stay literal/
+  technical ("open hand over the platter…", "point with one finger…") for
+  `GestureHUD`'s in-session reference panel, which is a different audience
+  (someone already playing, wants to confirm the exact pose) than the
+  onboarding card (a first-time visitor, for whom the icon now shows the
+  pose). The panel's own lede paragraph was cut from two sentences to one
+  ("Everything below also works with a mouse.").
+- **This also resolves the "FIST-HOLD and ONE-FINGER-HOLD look like the same
+  gesture" concern** raised after the first pass — not a logic bug (the
+  `ICON_BY_GESTURE`/action mapping was always correct: FIST-HOLD →
+  start/stop, ONE-FINGER-HOLD → 33/45, two genuinely different actions that
+  happen to share the same hold-still-to-latch *mechanism*), but the old
+  hand-drawn icons rendered both poses as small, low-contrast dot clusters
+  that were hard to tell apart at 46px. The new art makes the poses
+  unambiguous at a glance — FIST-HOLD is a compact closed shape, ONE-FINGER-
+  HOLD has one clear extended line — confirmed live in the browser at both
+  desktop and a 400px-wide mobile card layout (the `auto-fit` gesture grid
+  collapses to one column there for free, no dedicated breakpoint needed).
 
 ### Store shape
 - `velocity` / `position` are **not** in `useDeckStore` — they're in

@@ -1256,35 +1256,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 16px 12px 14px;
+  gap: 6px;
+  padding: 14px 12px 16px;
   border-radius: 14px;
   border: 1px solid var(--hud-border);
   background: rgba(255, 255, 255, 0.03);
 }
+/* a faintly-lit stage behind the icon — the illustrated hand art is a dark
+   silhouette (see public/gestures/*.svg), so it needs a touch more contrast
+   than the card's own near-black background gives it on its own */
+.tt-onboarding__icon-stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: 8px 0 4px;
+  border-radius: 10px;
+  background: radial-gradient(
+    120% 120% at 50% 30%,
+    rgba(60, 232, 250, 0.10),
+    transparent 70%
+  );
+}
 .tt-onboarding__icon {
-  width: 46px;
-  height: 46px;
-  margin-bottom: 2px;
-}
-/* same visual language as the live landmark skeleton — cyan joints/bones,
-   deliberately not the deck's amber, so this reads as "the hand tracker,"
-   not a separate illustration */
-.tt-onboarding__palm {
-  fill: rgba(60, 232, 250, 0.08);
-  stroke: var(--landmark-bone);
-  stroke-width: 1.2;
-}
-.tt-onboarding__bone {
-  stroke: var(--landmark-bone);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-}
-.tt-onboarding__joint {
-  fill: var(--landmark);
-}
-.tt-onboarding__joint--curled {
-  fill: var(--text-faint);
+  height: 62px;
+  width: auto;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 .tt-onboarding__gesture-name {
   font-size: 10.5px;
@@ -1292,15 +1288,10 @@
   letter-spacing: 0.13em;
   color: var(--backlight);
 }
-.tt-onboarding__gesture-desc {
-  font-size: 10.5px;
+.tt-onboarding__gesture-result {
+  font-size: 11px;
   line-height: 1.4;
   color: var(--text-secondary);
-}
-.tt-onboarding__gesture-motion {
-  margin-top: 2px;
-  font-size: 10px;
-  color: var(--landmark);
 }
 
 .tt-onboarding__cta {
